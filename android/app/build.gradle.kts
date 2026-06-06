@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.construction_ms_ui"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
