@@ -18,7 +18,7 @@ class PaymentStage {
 
 class StepFourPayments extends StatefulWidget {
   final TextEditingController budgetController;
-  const StepFourPayments({Key? key, required this.budgetController}) : super(key: key);
+  const StepFourPayments({super.key, required this.budgetController});
 
   @override
   State<StepFourPayments> createState() => _StepFourPaymentsState();

@@ -8,9 +8,21 @@ import 'package:construction_ms_ui/features/purchase_orders/presentation/pages/p
 import 'package:construction_ms_ui/features/stocks_hub/presentation/pages/stocks_hub_page.dart';
 import 'package:construction_ms_ui/features/logistics/presentation/pages/logistics_page.dart';
 import 'package:construction_ms_ui/features/vehicles/presentation/pages/vehicles_page.dart';
+import '../../../expenses/presentation/pages/expenses_page.dart';
+import '../../../advances/presentation/pages/advances_page.dart';
+import '../../../workers/presentation/pages/workers_page.dart';
+import '../../../workers/presentation/pages/manage_workers_page.dart';
+import '../../../attendance/presentation/pages/centralized_attendance_page.dart';
+import '../../../leave/presentation/pages/leave_management_page.dart';
+import '../../../crm_leads/presentation/pages/leads_page.dart';
+import '../../../crm_settings/presentation/pages/crm_settings_page.dart';
+import '../../../vendors/presentation/pages/vendors_page.dart';
+import '../../../app_settings/presentation/pages/app_settings_page.dart';
+import '../../../company_info/presentation/pages/company_info_page.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 
 class CustomDrawer extends StatelessWidget {
-  const CustomDrawer({Key? key}) : super(key: key);
+  const CustomDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -80,26 +92,98 @@ class CustomDrawer extends StatelessWidget {
                     );
                   }),
                   _buildSectionTitle('FINANCE'),
-                  _buildDrawerItem(Icons.credit_card_outlined, 'Expenses'),
-                  _buildDrawerItem(Icons.attach_money_outlined, 'Advances'),
+                  _buildDrawerItem(Icons.credit_card_outlined, 'Expenses', onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ExpensesPage()),
+                    );
+                  }),
+                  _buildDrawerItem(Icons.attach_money_outlined, 'Advances', onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AdvancesPage()),
+                    );
+                  }),
                   _buildSectionTitle('HR'),
-                  _buildDrawerItem(Icons.person_outline, 'Workers'),
-                  _buildDrawerItem(Icons.assignment_ind_outlined, 'Centralized Attendance'),
-                  _buildDrawerItem(Icons.calendar_today_outlined, 'Leave Management'),
+                  _buildDrawerItem(Icons.engineering, 'Manage Workers', onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ManageWorkersPage()),
+                    );
+                  }),
+                  _buildDrawerItem(Icons.person_outline, 'Project Workers', onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const WorkersPage()),
+                    );
+                  }),
+                  _buildDrawerItem(Icons.assignment_ind_outlined, 'Centralized Attendance', onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const CentralizedAttendancePage()),
+                    );
+                  }),
+                  _buildDrawerItem(Icons.calendar_today_outlined, 'Leave Management', onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LeaveManagementPage()),
+                    );
+                  }),
                   _buildSectionTitle('CRM'),
-                  _buildDrawerItem(Icons.people_outline, 'Leads'),
-                  _buildDrawerItem(Icons.settings_suggest_outlined, 'CRM Settings'),
+                  _buildDrawerItem(Icons.people_outline, 'Leads', onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LeadsPage()),
+                    );
+                  }),
+                  _buildDrawerItem(Icons.settings_suggest_outlined, 'CRM Settings', onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CrmSettingsPage()),
+                    );
+                  }),
                   const Divider(color: Colors.white10, height: 32),
-                  _buildDrawerItem(Icons.group_outlined, 'Vendors'),
-                  _buildDrawerItem(Icons.business_outlined, 'Company Details'),
+                  _buildDrawerItem(Icons.group_outlined, 'Vendors', onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const VendorsPage()),
+                    );
+                  }),
+                  _buildDrawerItem(Icons.business_outlined, 'Company Details', onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CompanyInfoPage()),
+                    );
+                  }),
                   _buildDrawerItem(Icons.person_outline, 'Profile', onTap: () {
                     Navigator.of(context).pop(); // close drawer
                     Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const ProfilePage()),
                     );
                   }),
-                  _buildDrawerItem(Icons.settings_outlined, 'Settings'),
-                  _buildDrawerItem(Icons.logout, 'Logout', isDestructive: true),
+                  _buildDrawerItem(Icons.settings_outlined, 'Settings', onTap: () {
+                    Navigator.of(context).pop();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AppSettingsPage()),
+                    );
+                  }),
+                  _buildDrawerItem(Icons.logout, 'Logout', isDestructive: true, onTap: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const LoginPage()),
+                      (route) => false,
+                    );
+                  }),
                   const SizedBox(height: 16),
                   const Center(
                     child: Text(
@@ -226,7 +310,7 @@ class _HoverableDrawerItemState extends State<_HoverableDrawerItem> {
           ),
         ),
         tileColor: _isHovering && !widget.isDestructive 
-            ? const Color(0xFF06B6D4).withOpacity(0.15) 
+            ? const Color(0xFF06B6D4).withValues(alpha: 0.15) 
             : null,
         dense: true,
         visualDensity: const VisualDensity(vertical: -2),

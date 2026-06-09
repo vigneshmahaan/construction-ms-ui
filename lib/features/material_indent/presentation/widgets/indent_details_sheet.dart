@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:construction_ms_ui/core/theme/app_colors.dart';
 import 'package:construction_ms_ui/features/material_indent/data/models/material_indent_model.dart';
 import 'package:intl/intl.dart';
 
@@ -8,10 +7,10 @@ class IndentDetailsSheet extends StatelessWidget {
   final Function(IndentStatus) onStatusChanged;
 
   const IndentDetailsSheet({
-    Key? key, 
+    super.key, 
     required this.indent,
     required this.onStatusChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -172,10 +171,10 @@ class IndentDetailsSheet extends StatelessWidget {
     // Wait, the detail sheet screenshot shows a dark pill with green text for APPROVED? 
     // Let's use an opaque background with matching colors.
     if (status == IndentStatus.approved) {
-      bgColor = const Color(0xFF059669).withOpacity(0.2);
+      bgColor = const Color(0xFF059669).withValues(alpha: 0.2);
       textColor = const Color(0xFF10B981);
     } else if (status == IndentStatus.pending) {
-      bgColor = const Color(0xFFD97706).withOpacity(0.2);
+      bgColor = const Color(0xFFD97706).withValues(alpha: 0.2);
       textColor = const Color(0xFFF59E0B);
     }
 
@@ -246,7 +245,7 @@ class IndentDetailsSheet extends StatelessWidget {
                   const Divider(color: Color(0xFF334155), height: 1),
               ],
             );
-          }).toList(),
+          }),
         ],
       ),
     );

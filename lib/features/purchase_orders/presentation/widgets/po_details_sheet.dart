@@ -6,7 +6,7 @@ import 'package:construction_ms_ui/features/purchase_orders/data/models/purchase
 class PODetailsSheet extends StatelessWidget {
   final PurchaseOrder po;
 
-  const PODetailsSheet({Key? key, required this.po}) : super(key: key);
+  const PODetailsSheet({super.key, required this.po});
 
   @override
   Widget build(BuildContext context) {
@@ -136,11 +136,11 @@ class PODetailsSheet extends StatelessWidget {
     String text;
 
     if (status == POStatus.confirmed) {
-      bgColor = const Color(0xFF059669).withOpacity(0.2);
+      bgColor = const Color(0xFF059669).withValues(alpha: 0.2);
       textColor = const Color(0xFF10B981);
       text = 'CONFIRMED';
     } else {
-      bgColor = const Color(0xFFD97706).withOpacity(0.2);
+      bgColor = const Color(0xFFD97706).withValues(alpha: 0.2);
       textColor = const Color(0xFFF59E0B);
       text = 'PENDING';
     }
@@ -219,7 +219,7 @@ class PODetailsSheet extends StatelessWidget {
                 const Divider(color: Color(0xFF334155), height: 1),
               ],
             );
-          }).toList(),
+          }),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(

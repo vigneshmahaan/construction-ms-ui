@@ -7,7 +7,7 @@ import 'package:construction_ms_ui/features/vehicles/data/models/vehicle_model.d
 class AddVehicleSheet extends StatefulWidget {
   final Function(Vehicle) onSave;
 
-  const AddVehicleSheet({Key? key, required this.onSave}) : super(key: key);
+  const AddVehicleSheet({super.key, required this.onSave});
 
   @override
   State<AddVehicleSheet> createState() => _AddVehicleSheetState();

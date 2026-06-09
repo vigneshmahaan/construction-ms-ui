@@ -3,7 +3,7 @@ import 'package:construction_ms_ui/core/theme/app_colors.dart';
 
 class StepSixPreview extends StatelessWidget {
   final TextEditingController budgetController;
-  const StepSixPreview({Key? key, required this.budgetController}) : super(key: key);
+  const StepSixPreview({super.key, required this.budgetController});
 
   @override
   Widget build(BuildContext context) {

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:construction_ms_ui/core/theme/app_colors.dart';
-import 'package:construction_ms_ui/features/home/presentation/widgets/custom_drawer.dart';
 import 'package:construction_ms_ui/features/stocks_hub/data/models/stock_model.dart';
 import 'package:construction_ms_ui/features/stocks_hub/presentation/widgets/stock_details_sheet.dart';
 
 class StocksHubPage extends StatefulWidget {
-  const StocksHubPage({Key? key}) : super(key: key);
+  const StocksHubPage({super.key});
 
   @override
   State<StocksHubPage> createState() => _StocksHubPageState();

@@ -16,7 +16,7 @@ class CustomFormField extends StatelessWidget {
   final bool isDark;
 
   const CustomFormField({
-    Key? key,
+    super.key,
     required this.label,
     required this.hint,
     this.isRequired = false,
@@ -29,7 +29,7 @@ class CustomFormField extends StatelessWidget {
     this.readOnly = false,
     this.onTap,
     this.isDark = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +59,8 @@ class CustomFormField extends StatelessWidget {
         ),
         if (isDropdown)
           DropdownButtonFormField<String>(
-            value: dropdownValue,
+            isExpanded: true,
+            initialValue: dropdownValue,
             icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B), size: 20),
             dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
             decoration: _buildInputDecoration(),

@@ -5,7 +5,7 @@ import 'package:construction_ms_ui/features/vehicles/data/models/vehicle_model.d
 class VehicleDetailsSheet extends StatelessWidget {
   final Vehicle vehicle;
 
-  const VehicleDetailsSheet({Key? key, required this.vehicle}) : super(key: key);
+  const VehicleDetailsSheet({super.key, required this.vehicle});
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +101,7 @@ class VehicleDetailsSheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.local_shipping_outlined, color: iconColor, size: 28),
@@ -195,7 +195,7 @@ class VehicleDetailsSheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withOpacity(0.1),
+              color: const Color(0xFF10B981).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.person_outline, color: Color(0xFF10B981), size: 24),
@@ -229,7 +229,7 @@ class VehicleDetailsSheet extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,17 +260,17 @@ class VehicleDetailsSheet extends StatelessWidget {
 
     switch (status) {
       case VehicleStatus.active:
-        bgColor = const Color(0xFF10B981).withOpacity(0.2);
+        bgColor = const Color(0xFF10B981).withValues(alpha: 0.2);
         textColor = const Color(0xFF10B981);
         text = 'ACTIVE';
         break;
       case VehicleStatus.onSite:
-        bgColor = const Color(0xFFD97706).withOpacity(0.2);
+        bgColor = const Color(0xFFD97706).withValues(alpha: 0.2);
         textColor = const Color(0xFFF59E0B);
         text = 'ON SITE';
         break;
       case VehicleStatus.maintenance:
-        bgColor = const Color(0xFFEF4444).withOpacity(0.2);
+        bgColor = const Color(0xFFEF4444).withValues(alpha: 0.2);
         textColor = const Color(0xFFEF4444);
         text = 'MAINTENANCE';
         break;

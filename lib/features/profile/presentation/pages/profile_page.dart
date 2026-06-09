@@ -1,7 +1,48 @@
 import 'package:flutter/material.dart';
+import '../../../app_settings/presentation/pages/app_settings_page.dart';
+import '../../../company_info/presentation/pages/company_info_page.dart';
+import '../widgets/edit_profile_bottom_sheet.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String _fullName = 'Vigneshwaran';
+  String _email = 'rockyvignesh312@gmail.com';
+  String _username = 'vigclaw';
+  String _phone = '7010396731';
+
+  void _showEditProfileSheet(BuildContext context) async {
+    final result = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: EditProfileBottomSheet(
+          initialName: _fullName,
+          initialEmail: _email,
+          initialUsername: _username,
+          initialPhone: _phone,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _fullName = result['name'] ?? _fullName;
+        _email = result['email'] ?? _email;
+        _username = result['username'] ?? _username;
+        _phone = result['phone'] ?? _phone;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +63,7 @@ class ProfilePage extends StatelessWidget {
             _buildSecuritySection(),
             const SizedBox(height: 32),
             _buildSectionTitle('LINKED TO'),
-            _buildLinkedToSection(),
+            _buildLinkedToSection(context),
             const SizedBox(height: 40),
           ],
         ),
@@ -39,7 +80,7 @@ class ProfilePage extends StatelessWidget {
         padding: const EdgeInsets.all(8.0),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: IconButton(
@@ -63,9 +104,7 @@ class ProfilePage extends StatelessWidget {
       actions: [
         IconButton(
           icon: const Icon(Icons.edit_outlined, color: Colors.white54),
-          onPressed: () {
-            // Edit profile action
-          },
+          onPressed: () => _showEditProfileSheet(context),
         ),
         const SizedBox(width: 8),
       ],
@@ -158,7 +197,7 @@ class ProfilePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -166,13 +205,13 @@ class ProfilePage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildInfoItem('FULL NAME', 'Vigneshwaran'),
+          _buildInfoItem('FULL NAME', _fullName),
           _buildDivider(),
-          _buildInfoItem('EMAIL', 'rockyvignesh312@gmail.com'),
+          _buildInfoItem('EMAIL', _email),
           _buildDivider(),
-          _buildInfoItem('USERNAME', 'vigclaw'),
+          _buildInfoItem('USERNAME', _username),
           _buildDivider(),
-          _buildInfoItem('PHONE', '7010396731'),
+          _buildInfoItem('PHONE', _phone),
           _buildDivider(),
           _buildInfoItem('COMPANY', 'innoaivators', isLast: true),
         ],
@@ -231,7 +270,7 @@ class ProfilePage extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9).withOpacity(0.5),
+        color: const Color(0xFFF1F5F9).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
@@ -296,7 +335,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildLinkedToSection() {
+  Widget _buildLinkedToSection(BuildContext context) {
     return Column(
       children: [
         _buildLinkedItem(
@@ -305,7 +344,12 @@ class ProfilePage extends StatelessWidget {
           iconBgColor: const Color(0xFFEDE9FE),
           title: 'Company Details',
           subtitle: 'Your company profile & GST info',
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CompanyInfoPage()),
+            );
+          },
         ),
         const SizedBox(height: 12),
         _buildLinkedItem(
@@ -314,7 +358,12 @@ class ProfilePage extends StatelessWidget {
           iconBgColor: const Color(0xFFFEF3C7),
           title: 'App Settings',
           subtitle: 'Notifications, security & preferences',
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AppSettingsPage()),
+            );
+          },
         ),
       ],
     );
@@ -331,7 +380,7 @@ class ProfilePage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Material(
-        color: iconBgColor.withOpacity(0.3),
+        color: iconBgColor.withValues(alpha: 0.3),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: iconBgColor),

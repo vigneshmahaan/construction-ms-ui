@@ -6,7 +6,7 @@ import 'package:construction_ms_ui/features/vehicles/presentation/widgets/add_ve
 import 'package:construction_ms_ui/features/vehicles/presentation/widgets/vehicle_details_sheet.dart';
 
 class VehiclesPage extends StatefulWidget {
-  const VehiclesPage({Key? key}) : super(key: key);
+  const VehiclesPage({super.key});
 
   @override
   State<VehiclesPage> createState() => _VehiclesPageState();
@@ -81,7 +81,7 @@ class _VehiclesPageState extends State<VehiclesPage> {
 
   Widget _buildVehicleCard(Vehicle vehicle) {
     final isActive = vehicle.status == VehicleStatus.active;
-    final iconBgColor = isActive ? const Color(0xFFF59E0B).withOpacity(0.1) : const Color(0xFF3B82F6).withOpacity(0.1);
+    final iconBgColor = isActive ? const Color(0xFFF59E0B).withValues(alpha: 0.1) : const Color(0xFF3B82F6).withValues(alpha: 0.1);
     final iconColor = isActive ? const Color(0xFFF59E0B) : const Color(0xFF3B82F6);
     
     return InkWell(

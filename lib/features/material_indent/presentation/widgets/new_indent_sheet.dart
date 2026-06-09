@@ -21,7 +21,7 @@ class MaterialFormGroup {
 class NewIndentSheet extends StatefulWidget {
   final Function(MaterialIndent) onSave;
 
-  const NewIndentSheet({Key? key, required this.onSave}) : super(key: key);
+  const NewIndentSheet({super.key, required this.onSave});
 
   @override
   State<NewIndentSheet> createState() => _NewIndentSheetState();
@@ -208,7 +208,7 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
                 padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                 child: Container(
                   decoration: idx > 0 ? BoxDecoration(
-                    border: Border(top: BorderSide(color: const Color(0xFF334155).withOpacity(0.5))),
+                    border: Border(top: BorderSide(color: const Color(0xFF334155).withValues(alpha: 0.5))),
                   ) : null,
                   padding: idx > 0 ? const EdgeInsets.only(top: 16.0) : EdgeInsets.zero,
                   child: Column(
@@ -256,7 +256,7 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
             Row(
               children: [
                 Expanded(

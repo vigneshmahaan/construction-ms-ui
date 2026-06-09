@@ -3,7 +3,7 @@ import 'package:construction_ms_ui/core/theme/app_colors.dart';
 import 'package:construction_ms_ui/features/projects/presentation/widgets/custom_form_field.dart';
 
 class StepTwoClientDetails extends StatelessWidget {
-  const StepTwoClientDetails({Key? key}) : super(key: key);
+  const StepTwoClientDetails({super.key});
 
   @override
   Widget build(BuildContext context) {

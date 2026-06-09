@@ -37,7 +37,7 @@ class POFormGroup {
 class NewPOSheet extends StatefulWidget {
   final Function(PurchaseOrder) onSave;
 
-  const NewPOSheet({Key? key, required this.onSave}) : super(key: key);
+  const NewPOSheet({super.key, required this.onSave});
 
   @override
   State<NewPOSheet> createState() => _NewPOSheetState();
@@ -240,7 +240,7 @@ class _NewPOSheetState extends State<NewPOSheet> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
             
             const SizedBox(height: 8),
             Container(

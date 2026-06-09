@@ -7,7 +7,7 @@ import 'package:construction_ms_ui/features/purchase_orders/presentation/widgets
 import 'package:construction_ms_ui/features/purchase_orders/presentation/widgets/po_details_sheet.dart';
 
 class PurchaseOrdersPage extends StatefulWidget {
-  const PurchaseOrdersPage({Key? key}) : super(key: key);
+  const PurchaseOrdersPage({super.key});
 
   @override
   State<PurchaseOrdersPage> createState() => _PurchaseOrdersPageState();

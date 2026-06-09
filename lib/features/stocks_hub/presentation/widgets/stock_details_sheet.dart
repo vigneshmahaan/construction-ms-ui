@@ -7,7 +7,7 @@ import 'package:construction_ms_ui/features/material_indent/presentation/pages/m
 class StockDetailsSheet extends StatelessWidget {
   final StockItem item;
 
-  const StockDetailsSheet({Key? key, required this.item}) : super(key: key);
+  const StockDetailsSheet({super.key, required this.item});
 
   void _onRaiseIndent(BuildContext context) {
     // Pop the bottom sheet
@@ -163,7 +163,7 @@ class StockDetailsSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isLow ? const Color(0xFFEF4444).withOpacity(0.2) : const Color(0xFF10B981).withOpacity(0.2),
+                  color: isLow ? const Color(0xFFEF4444).withValues(alpha: 0.2) : const Color(0xFF10B981).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
