@@ -7,10 +7,10 @@ class TripDetailsSheet extends StatelessWidget {
   final Function(LogisticStatus) onStatusChanged;
 
   const TripDetailsSheet({
-    Key? key,
+    super.key,
     required this.trip,
     required this.onStatusChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +126,7 @@ class TripDetailsSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isInTransit ? const Color(0xFFD97706).withOpacity(0.2) : const Color(0xFF10B981).withOpacity(0.2),
+                  color: isInTransit ? const Color(0xFFD97706).withValues(alpha: 0.2) : const Color(0xFF10B981).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -224,7 +224,7 @@ class TripDetailsSheet extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.local_shipping_outlined, color: Color(0xFF3B82F6), size: 20),
@@ -266,7 +266,7 @@ class TripDetailsSheet extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.person_outline, color: Color(0xFF10B981), size: 20),

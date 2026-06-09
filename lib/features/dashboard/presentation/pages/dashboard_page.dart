@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:construction_ms_ui/features/home/presentation/widgets/custom_drawer.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({Key? key}) : super(key: key);
+  const DashboardPage({super.key});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -317,7 +317,7 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isSelected ? const Color(0xFF06B6D4) : Colors.grey.shade200, width: isSelected ? 1.5 : 1),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -474,7 +474,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 leave['avatarBg']
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

@@ -4,7 +4,7 @@ import 'package:construction_ms_ui/features/warehouse/data/mock_warehouse_data.d
 class WarehouseDetailsPage extends StatefulWidget {
   final Map<String, dynamic> warehouseData;
 
-  const WarehouseDetailsPage({Key? key, required this.warehouseData}) : super(key: key);
+  const WarehouseDetailsPage({super.key, required this.warehouseData});
 
   @override
   State<WarehouseDetailsPage> createState() => _WarehouseDetailsPageState();
@@ -105,7 +105,7 @@ class _WarehouseDetailsPageState extends State<WarehouseDetailsPage> with Single
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -138,12 +138,12 @@ class _WarehouseDetailsPageState extends State<WarehouseDetailsPage> with Single
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
                   ],
-                  border: Border.all(color: item['isLowStock'] ? Colors.redAccent.withOpacity(0.4) : Colors.grey.shade100),
+                  border: Border.all(color: item['isLowStock'] ? Colors.redAccent.withValues(alpha: 0.4) : Colors.grey.shade100),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -226,7 +226,7 @@ class _WarehouseDetailsPageState extends State<WarehouseDetailsPage> with Single
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: bgColor.withOpacity(0.5),
+                        color: bgColor.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -248,7 +248,7 @@ class _WarehouseDetailsPageState extends State<WarehouseDetailsPage> with Single
 }
 
 class _UpdateStockModal extends StatefulWidget {
-  const _UpdateStockModal({Key? key}) : super(key: key);
+  const _UpdateStockModal();
 
   @override
   State<_UpdateStockModal> createState() => _UpdateStockModalState();
@@ -449,7 +449,7 @@ class _UpdateStockModalState extends State<_UpdateStockModal> {
 
   Widget _buildDropdown({required String? value, required List<String> items, required ValueChanged<String?> onChanged}) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       dropdownColor: const Color(0xFF1B1B28),
       style: const TextStyle(color: Colors.white, fontSize: 14),
       icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white54, size: 16),

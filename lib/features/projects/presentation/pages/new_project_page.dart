@@ -8,7 +8,7 @@ import 'package:construction_ms_ui/features/projects/presentation/widgets/new_pr
 import 'package:construction_ms_ui/features/projects/presentation/widgets/new_project_steps/step_six_preview.dart';
 
 class NewProjectPage extends StatefulWidget {
-  const NewProjectPage({Key? key}) : super(key: key);
+  const NewProjectPage({super.key});
 
   @override
   State<NewProjectPage> createState() => _NewProjectPageState();
@@ -150,15 +150,6 @@ class _NewProjectPageState extends State<NewProjectPage> {
     );
   }
 
-  Widget _buildComingSoonPlaceholder(int stepIndex) {
-    return Center(
-      child: Text(
-        '${_stepTitles[stepIndex]} Configuration\n(Coming Soon)',
-        textAlign: TextAlign.center,
-        style: const TextStyle(color: Colors.black54, fontSize: 16),
-      ),
-    );
-  }
 
   Widget _buildBottomBar() {
     return Positioned(

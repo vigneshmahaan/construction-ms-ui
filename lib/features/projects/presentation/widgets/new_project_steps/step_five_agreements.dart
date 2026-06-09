@@ -3,7 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:construction_ms_ui/core/theme/app_colors.dart';
 
 class StepFiveAgreements extends StatefulWidget {
-  const StepFiveAgreements({Key? key}) : super(key: key);
+  const StepFiveAgreements({super.key});
 
   @override
   State<StepFiveAgreements> createState() => _StepFiveAgreementsState();

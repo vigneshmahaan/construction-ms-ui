@@ -6,7 +6,7 @@ import 'package:construction_ms_ui/features/logistics/presentation/widgets/creat
 import 'package:construction_ms_ui/features/logistics/presentation/widgets/trip_details_sheet.dart';
 
 class LogisticsPage extends StatefulWidget {
-  const LogisticsPage({Key? key}) : super(key: key);
+  const LogisticsPage({super.key});
 
   @override
   State<LogisticsPage> createState() => _LogisticsPageState();

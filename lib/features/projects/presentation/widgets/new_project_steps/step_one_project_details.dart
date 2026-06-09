@@ -6,7 +6,7 @@ import 'package:construction_ms_ui/core/theme/app_colors.dart';
 import 'package:construction_ms_ui/features/projects/presentation/widgets/custom_form_field.dart';
 
 class StepOneProjectDetails extends StatefulWidget {
-  const StepOneProjectDetails({Key? key}) : super(key: key);
+  const StepOneProjectDetails({super.key});
 
   @override
   State<StepOneProjectDetails> createState() => _StepOneProjectDetailsState();
@@ -20,7 +20,7 @@ class _StepOneProjectDetailsState extends State<StepOneProjectDetails> {
   final TextEditingController _endDateController = TextEditingController();
   
   final ImagePicker _picker = ImagePicker();
-  List<XFile> _selectedImages = [];
+  final List<XFile> _selectedImages = [];
 
   @override
   void dispose() {

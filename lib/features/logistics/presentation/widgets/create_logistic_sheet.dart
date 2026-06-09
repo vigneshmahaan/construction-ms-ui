@@ -5,7 +5,7 @@ import 'package:construction_ms_ui/features/logistics/data/models/logistic_model
 class CreateLogisticSheet extends StatefulWidget {
   final Function(LogisticTrip) onSave;
 
-  const CreateLogisticSheet({Key? key, required this.onSave}) : super(key: key);
+  const CreateLogisticSheet({super.key, required this.onSave});
 
   @override
   State<CreateLogisticSheet> createState() => _CreateLogisticSheetState();

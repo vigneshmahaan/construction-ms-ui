@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 class MaterialIndentPage extends StatefulWidget {
   final bool openNewIndentOnInit;
 
-  const MaterialIndentPage({Key? key, this.openNewIndentOnInit = false}) : super(key: key);
+  const MaterialIndentPage({super.key, this.openNewIndentOnInit = false});
 
   @override
   State<MaterialIndentPage> createState() => _MaterialIndentPageState();

@@ -3,7 +3,7 @@ import 'package:construction_ms_ui/features/warehouse/data/mock_warehouse_data.d
 import 'package:construction_ms_ui/features/warehouse/presentation/pages/warehouse_details_page.dart';
 
 class WarehousePage extends StatefulWidget {
-  const WarehousePage({Key? key}) : super(key: key);
+  const WarehousePage({super.key});
 
   @override
   State<WarehousePage> createState() => _WarehousePageState();
@@ -78,7 +78,7 @@ class _WarehousePageState extends State<WarehousePage> {
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -192,7 +192,7 @@ class _WarehousePageState extends State<WarehousePage> {
 }
 
 class _CreateWarehouseModal extends StatefulWidget {
-  const _CreateWarehouseModal({Key? key}) : super(key: key);
+  const _CreateWarehouseModal();
 
   @override
   State<_CreateWarehouseModal> createState() => _CreateWarehouseModalState();
@@ -367,7 +367,7 @@ class _CreateWarehouseModalState extends State<_CreateWarehouseModal> {
 
   Widget _buildDropdown() {
     return DropdownButtonFormField<String>(
-      value: _type,
+      initialValue: _type,
       dropdownColor: const Color(0xFF1B1B28),
       style: const TextStyle(color: Colors.white, fontSize: 14),
       icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white54, size: 16),
