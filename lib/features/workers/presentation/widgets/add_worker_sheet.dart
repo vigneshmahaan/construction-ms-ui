@@ -23,6 +23,10 @@ class _AddWorkerSheetState extends State<AddWorkerSheet> {
   final _stateController = TextEditingController();
   final _cityController = TextEditingController();
 
+  bool _canUpdateTasks = true;
+  bool _canUploadPhotos = true;
+  bool _canRequestMaterials = true;
+
   String? _selectedRole = 'Site Engineer';
   String? _selectedPayType = 'Daily';
   String? _selectedIdType = 'Aadhar';
@@ -43,6 +47,9 @@ class _AddWorkerSheetState extends State<AddWorkerSheet> {
       _selectedIdType = w.idProofType;
       _stateController.text = w.state;
       _cityController.text = w.city;
+      _canUpdateTasks = w.permissions['canUpdateTasks'] ?? true;
+      _canUploadPhotos = w.permissions['canUploadPhotos'] ?? true;
+      _canRequestMaterials = w.permissions['canRequestMaterials'] ?? true;
       // We are skipping loading profile image from URL for simplicity in edit mode
     }
   }
@@ -148,6 +155,12 @@ class _AddWorkerSheetState extends State<AddWorkerSheet> {
       idProofNumber: _idNumberController.text.trim(),
       state: _stateController.text.trim(),
       city: _cityController.text.trim(),
+      permissions: {
+        'canUpdateTasks': _canUpdateTasks,
+        'canUploadPhotos': _canUploadPhotos,
+        'canRequestMaterials': _canRequestMaterials,
+      },
+      assignedProjectIds: widget.workerToEdit?.assignedProjectIds ?? [],
       // In a real app, upload _profileImage to server and get URL
       profileImageUrl: widget.workerToEdit?.profileImageUrl,
     );
@@ -395,6 +408,53 @@ class _AddWorkerSheetState extends State<AddWorkerSheet> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 24),
+
+            // Permissions Section
+            const Text(
+              'PORTAL PERMISSIONS',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF334155)),
+              ),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    title: const Text('Update Daily Tasks', style: TextStyle(color: Colors.white, fontSize: 14)),
+                    subtitle: const Text('Can mark assigned tasks as complete/blocked', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                    value: _canUpdateTasks,
+                    activeColor: AppColors.primary,
+                    onChanged: (val) => setState(() => _canUpdateTasks = val),
+                  ),
+                  const Divider(color: Color(0xFF334155), height: 1),
+                  SwitchListTile(
+                    title: const Text('Upload Site Photos', style: TextStyle(color: Colors.white, fontSize: 14)),
+                    subtitle: const Text('Can upload and share progress photos', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                    value: _canUploadPhotos,
+                    activeColor: AppColors.primary,
+                    onChanged: (val) => setState(() => _canUploadPhotos = val),
+                  ),
+                  const Divider(color: Color(0xFF334155), height: 1),
+                  SwitchListTile(
+                    title: const Text('Request Materials', style: TextStyle(color: Colors.white, fontSize: 14)),
+                    subtitle: const Text('Can raise indents for warehouse materials', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                    value: _canRequestMaterials,
+                    activeColor: AppColors.primary,
+                    onChanged: (val) => setState(() => _canRequestMaterials = val),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
             SizedBox(
