@@ -10,6 +10,8 @@ class Worker {
   final String idProofNumber;
   final String state;
   final String city;
+  final Map<String, bool> permissions;
+  final List<String> assignedProjectIds;
 
   Worker({
     required this.id,
@@ -23,6 +25,12 @@ class Worker {
     required this.idProofNumber,
     this.state = '',
     this.city = '',
+    this.permissions = const {
+      'canUpdateTasks': true,
+      'canUploadPhotos': true,
+      'canRequestMaterials': true,
+    },
+    this.assignedProjectIds = const [],
   });
 
   Worker copyWith({
@@ -36,6 +44,8 @@ class Worker {
     String? idProofNumber,
     String? state,
     String? city,
+    Map<String, bool>? permissions,
+    List<String>? assignedProjectIds,
   }) {
     return Worker(
       id: id,
@@ -49,6 +59,8 @@ class Worker {
       idProofNumber: idProofNumber ?? this.idProofNumber,
       state: state ?? this.state,
       city: city ?? this.city,
+      permissions: permissions ?? this.permissions,
+      assignedProjectIds: assignedProjectIds ?? this.assignedProjectIds,
     );
   }
 }

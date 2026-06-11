@@ -3,6 +3,8 @@ import 'package:construction_ms_ui/core/theme/app_colors.dart';
 import '../../data/models/project_models.dart';
 import '../../data/services/client_project_service.dart';
 import '../widgets/client_drawer.dart';
+import 'client_notifications_page.dart';
+import 'client_project_details_page.dart';
 
 class ClientHomePage extends StatefulWidget {
   const ClientHomePage({super.key});
@@ -67,6 +69,36 @@ class _ClientHomePageState extends State<ClientHomePage> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ClientNotificationsPage()),
+                  );
+                },
+              ),
+              if (pendingInvites.isNotEmpty)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       drawer: const ClientDrawer(),
       body: SafeArea(
@@ -86,11 +118,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
               ),
               const SizedBox(height: 32),
 
-              if (pendingInvites.isNotEmpty) ...[
-                _buildInvitesSection(pendingInvites),
-                const SizedBox(height: 32),
-              ],
-
               const Text(
                 'Active Projects',
                 style: TextStyle(color: AppColors.textDark, fontSize: 20, fontWeight: FontWeight.bold),
@@ -105,93 +132,6 @@ class _ClientHomePageState extends State<ClientHomePage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildInvitesSection(List<ProjectInvite> invites) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Pending Invitations',
-          style: TextStyle(color: Color(0xFF06B6D4), fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        ...invites.map((invite) => Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.maps_home_work_rounded, color: Color(0xFF06B6D4)),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          invite.projectName,
-                          style: const TextStyle(color: AppColors.textDark, fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Invited by ${invite.adminName}',
-                          style: const TextStyle(color: Colors.black54, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _projectService.declineInvite(invite.id),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.red.shade400),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text('Decline', style: TextStyle(color: Colors.red.shade400)),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _projectService.acceptInvite(invite.id),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Accept', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        )),
-      ],
     );
   }
 
@@ -227,8 +167,16 @@ class _ClientHomePageState extends State<ClientHomePage> {
   }
 
   Widget _buildProjectCard(ClientProject project) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ClientProjectDetailsPage(project: project)),
+        );
+      },
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -360,6 +308,7 @@ class _ClientHomePageState extends State<ClientHomePage> {
           ),
         ],
       ),
+    ),
     );
   }
 }

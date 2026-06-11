@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:construction_ms_ui/features/home/presentation/widgets/custom_drawer.dart';
 import 'package:construction_ms_ui/features/projects/presentation/pages/new_project_page.dart';
+import 'package:construction_ms_ui/features/projects/presentation/pages/project_details_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -258,8 +259,22 @@ class _HomePageState extends State<HomePage> {
     final badgeTextColor = isCommercial ? const Color(0xFF2563EB) : const Color(0xFF059669);
     final progressBarColor = isCommercial ? const Color(0xFF06B6D4) : const Color(0xFF10B981);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ProjectDetailsPage(
+              title: title,
+              type: type,
+              subtitle: subtitle,
+              progress: progress,
+              dateRange: dateRange,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -369,7 +384,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   List<Widget> _buildAvatars(List<String> initialsList) {

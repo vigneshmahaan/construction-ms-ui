@@ -4,7 +4,11 @@ import 'package:construction_ms_ui/shared/services/auth_service.dart';
 import 'package:construction_ms_ui/features/home/presentation/pages/home_page.dart';
 import 'package:construction_ms_ui/features/client_portal/presentation/pages/client_home_page.dart';
 import 'package:construction_ms_ui/features/worker_management/presentation/pages/worker_home_page.dart';
+import 'package:construction_ms_ui/features/worker_management/presentation/pages/site_engineer_home_page.dart';
+import 'package:construction_ms_ui/features/worker_management/presentation/pages/project_manager_home_page.dart';
+import 'package:construction_ms_ui/features/worker_management/presentation/pages/supervisor_home_page.dart';
 import 'package:construction_ms_ui/features/auth/presentation/pages/complete_profile_page.dart';
+import 'package:construction_ms_ui/shared/models/worker_role.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,6 +19,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   UserRole _selectedRole = UserRole.admin;
+  WorkerRole _selectedWorkerRole = WorkerRole.siteEngineer;
   bool _isOtpSent = false;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
@@ -38,7 +43,13 @@ class _LoginPageState extends State<LoginPage> {
         destination = const ClientHomePage();
         break;
       case UserRole.worker:
-        destination = const WorkerHomePage();
+        switch (_selectedWorkerRole) {
+          case WorkerRole.siteEngineer:
+          case WorkerRole.projectManager:
+          case WorkerRole.supervisor:
+            destination = const SupervisorHomePage();
+            break;
+        }
         break;
     }
 
@@ -88,6 +99,10 @@ class _LoginPageState extends State<LoginPage> {
 
               // ── Role Selector ──
               _buildRoleSelector(),
+              if (_selectedRole == UserRole.worker) ...[
+                const SizedBox(height: 16),
+                _buildWorkerRoleSelector(),
+              ],
               const SizedBox(height: 32),
 
               _buildPhoneField(),
@@ -193,6 +208,56 @@ class _LoginPageState extends State<LoginPage> {
               color: const Color(0xFF10B981),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWorkerRoleSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'SPECIFIC ROLE',
+          style: TextStyle(
+            color: Colors.white54,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<WorkerRole>(
+              value: _selectedWorkerRole,
+              isExpanded: true,
+              dropdownColor: const Color(0xFF1E293B),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white54),
+              items: WorkerRole.values.map((role) {
+                return DropdownMenuItem(
+                  value: role,
+                  child: Text(
+                    role.label,
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                );
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() {
+                    _selectedWorkerRole = val;
+                  });
+                }
+              },
+            ),
+          ),
         ),
       ],
     );

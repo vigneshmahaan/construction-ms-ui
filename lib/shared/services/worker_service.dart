@@ -22,6 +22,12 @@ class WorkerService extends ChangeNotifier {
       idProofNumber: 'XXXX-XXXX-1234',
       state: 'Tamil Nadu',
       city: 'Chennai',
+      assignedProjectIds: ['p1', 'p2'],
+      permissions: {
+        'canUpdateTasks': true,
+        'canUploadPhotos': true,
+        'canRequestMaterials': true,
+      },
     ),
     Worker(
       id: '2',
@@ -34,6 +40,12 @@ class WorkerService extends ChangeNotifier {
       idProofNumber: 'ABCDE1234F',
       state: 'Karnataka',
       city: 'Bangalore',
+      assignedProjectIds: ['p3'],
+      permissions: {
+        'canUpdateTasks': false,
+        'canUploadPhotos': true,
+        'canRequestMaterials': false,
+      },
     ),
   ];
 
