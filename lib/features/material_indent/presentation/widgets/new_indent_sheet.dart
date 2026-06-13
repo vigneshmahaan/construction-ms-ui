@@ -35,9 +35,44 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
   
   final List<MaterialFormGroup> _formGroups = [MaterialFormGroup()];
 
+  bool _isFormValid = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _validateForm();
+  }
+
+  void _validateForm() {
+    bool hasValidItem = _formGroups.any((g) => 
+        g.nameController.text.trim().isNotEmpty && 
+        g.qtyController.text.trim().isNotEmpty);
+
+    final isValid = selectedSite != null && 
+                    selectedAssignee != null && 
+                    endDate != null && 
+                    hasValidItem;
+                    
+    if (_isFormValid != isValid) {
+      setState(() => _isFormValid = isValid);
+    }
+  }
+
+  void _addListenersToGroup(MaterialFormGroup group) {
+    group.nameController.addListener(_validateForm);
+    group.qtyController.addListener(_validateForm);
+  }
+
+  void _removeListenersFromGroup(MaterialFormGroup group) {
+    group.nameController.removeListener(_validateForm);
+    group.qtyController.removeListener(_validateForm);
+  }
+
   @override
   void dispose() {
     for (var group in _formGroups) {
+      _removeListenersFromGroup(group);
       group.dispose();
     }
     super.dispose();
@@ -45,7 +80,10 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
 
   void _addMore() {
     setState(() {
-      _formGroups.add(MaterialFormGroup());
+      final newGroup = MaterialFormGroup();
+      _addListenersToGroup(newGroup);
+      _formGroups.add(newGroup);
+      _validateForm();
     });
   }
 
@@ -72,11 +110,14 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
     if (picked != null && picked != endDate) {
       setState(() {
         endDate = picked;
+        _validateForm();
       });
     }
   }
 
-  void _saveIndent() {
+  void _saveIndent() async {
+    if (!_isFormValid) return;
+
     List<MaterialItem> items = [];
     String mainDescription = '';
 
@@ -93,16 +134,6 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
         }
       }
     }
-    
-    if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add at least one material')));
-      return;
-    }
-    
-    if (endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an end date')));
-      return;
-    }
 
     final newIndent = MaterialIndent(
       id: '#IND-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
@@ -115,8 +146,26 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
       description: mainDescription,
     );
     
-    widget.onSave(newIndent);
-    Navigator.of(context).pop();
+    setState(() => _isLoading = true);
+    try {
+      await Future.delayed(const Duration(milliseconds: 500)); // Simulate API call
+      widget.onSave(newIndent);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Indent created successfully!'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create indent: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -166,7 +215,10 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
               isDark: true,
               dropdownValue: selectedSite,
               dropdownItems: const ['Metro Towers Site', 'Sunrise Villa Site', 'Lakeside Phase 2'],
-              onDropdownChanged: (val) => setState(() => selectedSite = val),
+              onDropdownChanged: (val) {
+                setState(() => selectedSite = val);
+                _validateForm();
+              },
             ),
             CustomFormField(
               label: 'ASSIGNED TO',
@@ -176,7 +228,10 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
               isDark: true,
               dropdownValue: selectedAssignee,
               dropdownItems: const ['Raj Kumar', 'Suresh K.', 'Amit Patel'],
-              onDropdownChanged: (val) => setState(() => selectedAssignee = val),
+              onDropdownChanged: (val) {
+                setState(() => selectedAssignee = val);
+                _validateForm();
+              },
             ),
             const Text(
               'PRIORITY',
@@ -290,16 +345,23 @@ class _NewIndentSheetState extends State<NewIndentSheet> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _saveIndent,
+                onPressed: (_isFormValid && !_isLoading) ? _saveIndent : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
+                  disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.3),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text(
-                  'Save Indent',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                child: _isLoading
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(
+                        'Save Indent',
+                        style: TextStyle(
+                          color: _isFormValid ? Colors.white : Colors.white54, 
+                          fontWeight: FontWeight.bold, 
+                          fontSize: 16
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 24),

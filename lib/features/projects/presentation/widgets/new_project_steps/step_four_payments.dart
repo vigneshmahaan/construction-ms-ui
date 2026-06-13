@@ -18,40 +18,25 @@ class PaymentStage {
 
 class StepFourPayments extends StatefulWidget {
   final TextEditingController budgetController;
-  const StepFourPayments({super.key, required this.budgetController});
+  final TextEditingController advanceController;
+  final List<PaymentStage> stages;
+  final VoidCallback onAddStage;
+  final Function(int) onRemoveStage;
+
+  const StepFourPayments({
+    super.key, 
+    required this.budgetController,
+    required this.advanceController,
+    required this.stages,
+    required this.onAddStage,
+    required this.onRemoveStage,
+  });
 
   @override
   State<StepFourPayments> createState() => _StepFourPaymentsState();
 }
 
 class _StepFourPaymentsState extends State<StepFourPayments> {
-  final TextEditingController _advanceController = TextEditingController();
-  final List<PaymentStage> _stages = [
-    PaymentStage() // Initial empty stage
-  ];
-
-  @override
-  void dispose() {
-    _advanceController.dispose();
-    for (var stage in _stages) {
-      stage.dispose();
-    }
-    super.dispose();
-  }
-
-  void _addStage() {
-    setState(() {
-      _stages.add(PaymentStage());
-    });
-  }
-
-  void _removeStage(int index) {
-    setState(() {
-      _stages[index].dispose();
-      _stages.removeAt(index);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -77,7 +62,7 @@ class _StepFourPaymentsState extends State<StepFourPayments> {
           CustomFormField(
             label: 'ADVANCE RECEIVED ₹',
             hint: 'e.g. 500000',
-            controller: _advanceController,
+            controller: widget.advanceController,
           ),
           const SizedBox(height: 8),
           Row(
@@ -92,7 +77,7 @@ class _StepFourPaymentsState extends State<StepFourPayments> {
                 ),
               ),
               TextButton.icon(
-                onPressed: _addStage,
+                onPressed: widget.onAddStage,
                 icon: const Icon(Icons.add, color: AppColors.primary, size: 16),
                 label: const Text(
                   'Add Stage',
@@ -110,9 +95,9 @@ class _StepFourPaymentsState extends State<StepFourPayments> {
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _stages.length,
+            itemCount: widget.stages.length,
             itemBuilder: (context, index) {
-              final stage = _stages[index];
+              final stage = widget.stages[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
@@ -135,11 +120,11 @@ class _StepFourPaymentsState extends State<StepFourPayments> {
                         decoration: _buildInputDecoration('₹ Amt'),
                       ),
                     ),
-                    if (index > 0 || _stages.length > 1) // Allow deletion if it's not the only one
+                    if (index > 0 || widget.stages.length > 1) // Allow deletion if it's not the only one
                       Padding(
                         padding: const EdgeInsets.only(left: 8, top: 8),
                         child: GestureDetector(
-                          onTap: () => _removeStage(index),
+                          onTap: () => widget.onRemoveStage(index),
                           child: const Icon(Icons.delete_outline, color: AppColors.error),
                         ),
                       ),

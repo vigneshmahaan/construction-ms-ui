@@ -50,18 +50,34 @@ class _NewPOSheetState extends State<NewPOSheet> {
   final List<POFormGroup> _formGroups = [POFormGroup()];
   final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
 
+  bool _isFormValid = false;
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
     // Add listeners to calculate total automatically
     for (var group in _formGroups) {
+      group.nameController.addListener(_updateTotal);
       group.priceController.addListener(_updateTotal);
       group.qtyController.addListener(_updateTotal);
     }
   }
 
+  void _validateForm() {
+    bool hasValidItem = _formGroups.any((g) => 
+        g.nameController.text.trim().isNotEmpty && 
+        g.priceController.text.trim().isNotEmpty && 
+        g.qtyController.text.trim().isNotEmpty);
+    
+    final isValid = selectedVendor != null && hasValidItem;
+    if (_isFormValid != isValid) {
+      setState(() => _isFormValid = isValid);
+    }
+  }
+
   void _updateTotal() {
-    setState(() {}); // Triggers rebuild to update total amount
+    _validateForm();
   }
 
   @override
@@ -77,9 +93,11 @@ class _NewPOSheetState extends State<NewPOSheet> {
   void _addItem() {
     setState(() {
       final newGroup = POFormGroup();
+      newGroup.nameController.addListener(_updateTotal);
       newGroup.priceController.addListener(_updateTotal);
       newGroup.qtyController.addListener(_updateTotal);
       _formGroups.add(newGroup);
+      _validateForm();
     });
   }
 
@@ -87,11 +105,8 @@ class _NewPOSheetState extends State<NewPOSheet> {
     return _formGroups.fold(0, (sum, group) => sum + group.total);
   }
 
-  void _createPO() {
-    if (selectedVendor == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a vendor')));
-      return;
-    }
+  void _createPO() async {
+    if (!_isFormValid) return;
 
     List<PurchaseOrderItem> items = [];
     for (var group in _formGroups) {
@@ -111,11 +126,6 @@ class _NewPOSheetState extends State<NewPOSheet> {
       }
     }
 
-    if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add at least one item')));
-      return;
-    }
-
     final newPO = PurchaseOrder(
       id: '#PO-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
       vendorName: selectedVendor!,
@@ -126,8 +136,26 @@ class _NewPOSheetState extends State<NewPOSheet> {
       items: items,
     );
 
-    widget.onSave(newPO);
-    Navigator.of(context).pop();
+    setState(() => _isLoading = true);
+    try {
+      await Future.delayed(const Duration(milliseconds: 500)); // Simulate API
+      widget.onSave(newPO);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PO Created Successfully!'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create PO: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -177,7 +205,10 @@ class _NewPOSheetState extends State<NewPOSheet> {
               isDark: true,
               dropdownValue: selectedVendor,
               dropdownItems: const ['RK Steel Industries', 'KM Cement Works', 'National Hardware'],
-              onDropdownChanged: (val) => setState(() => selectedVendor = val),
+              onDropdownChanged: (val) {
+                setState(() => selectedVendor = val);
+                _validateForm();
+              },
             ),
             CustomFormField(
               label: 'SELECT INDENT',
@@ -267,13 +298,23 @@ class _NewPOSheetState extends State<NewPOSheet> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _createPO,
+                onPressed: (_isFormValid && !_isLoading) ? _createPO : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
+                  disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.3),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Create PO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                child: _isLoading
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(
+                        'Create PO', 
+                        style: TextStyle(
+                          color: _isFormValid ? Colors.white : Colors.white54, 
+                          fontWeight: FontWeight.bold, 
+                          fontSize: 16
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 24),

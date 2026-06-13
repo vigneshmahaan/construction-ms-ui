@@ -7,7 +7,8 @@ import 'package:construction_ms_ui/features/purchase_orders/presentation/widgets
 import 'package:construction_ms_ui/features/purchase_orders/presentation/widgets/po_details_sheet.dart';
 
 class PurchaseOrdersPage extends StatefulWidget {
-  const PurchaseOrdersPage({super.key});
+  final bool isReadOnly;
+  const PurchaseOrdersPage({super.key, this.isReadOnly = false});
 
   @override
   State<PurchaseOrdersPage> createState() => _PurchaseOrdersPageState();
@@ -66,24 +67,53 @@ class _PurchaseOrdersPageState extends State<PurchaseOrdersPage> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white54),
-            onPressed: _showNewPOSheet,
-          ),
+          if (!widget.isReadOnly)
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.white54),
+              onPressed: _showNewPOSheet,
+            ),
         ],
       ),
       drawer: const CustomDrawer(),
-      body: _pos.isEmpty
-          ? const Center(child: Text('No Purchase Orders found', style: TextStyle(color: Colors.white54)))
-          : ListView.builder(
+      body: Column(
+        children: [
+          if (widget.isReadOnly)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Read-Only Mode. You can view POs but cannot edit or add them.',
+                      style: TextStyle(color: Colors.amber.shade900, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: _pos.isEmpty
+                ? const Center(child: Text('No Purchase Orders found', style: TextStyle(color: Colors.white54)))
+                : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _pos.length,
               itemBuilder: (context, index) {
                 final po = _pos[index];
                 return _buildPOCard(po);
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
+                  },
+                ),
+          ),
+        ],
+      ),
+      floatingActionButton: widget.isReadOnly ? null : FloatingActionButton(
         onPressed: _showNewPOSheet,
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),

@@ -5,10 +5,17 @@ import '../../../purchase_orders/presentation/pages/purchase_orders_page.dart';
 import '../../../logistics/presentation/pages/logistics_page.dart';
 import '../../../expenses/presentation/pages/expenses_page.dart';
 
-class VendorDetailsBottomSheet extends StatelessWidget {
+class VendorDetailsBottomSheet extends StatefulWidget {
   final Vendor vendor;
 
   const VendorDetailsBottomSheet({super.key, required this.vendor});
+
+  @override
+  State<VendorDetailsBottomSheet> createState() => _VendorDetailsBottomSheetState();
+}
+
+class _VendorDetailsBottomSheetState extends State<VendorDetailsBottomSheet> {
+  String _selectedProject = 'Sunrise Villa';
 
   @override
   Widget build(BuildContext context) {
@@ -79,12 +86,12 @@ class VendorDetailsBottomSheet extends StatelessWidget {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: vendor.avatarColor,
+                          color: widget.vendor.avatarColor,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          vendor.initials,
+                          widget.vendor.initials,
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -98,7 +105,7 @@ class VendorDetailsBottomSheet extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              vendor.name,
+                              widget.vendor.name,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -107,7 +114,7 @@ class VendorDetailsBottomSheet extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Material Supplier · ${vendor.type}',
+                              'Material Supplier · ${widget.vendor.type}',
                               style: const TextStyle(
                                 color: Colors.white54,
                                 fontSize: 13,
@@ -188,6 +195,74 @@ class VendorDetailsBottomSheet extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Materials Supplied Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Materials Supplied',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedProject,
+                            icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                            dropdownColor: const Color(0xFF1E293B),
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            items: ['Sunrise Villa', 'City Mall', 'Metro Station']
+                                .map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  _selectedProject = newValue;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildMaterialRow('Bricks', '15,000 pcs', Icons.view_comfy),
+                        const SizedBox(height: 12),
+                        const Divider(color: Colors.white10, height: 1),
+                        const SizedBox(height: 12),
+                        _buildMaterialRow('TMT Steel', '4.5 Tons', Icons.line_weight),
+                        const SizedBox(height: 12),
+                        const Divider(color: Colors.white10, height: 1),
+                        const SizedBox(height: 12),
+                        _buildMaterialRow('Cement', '120 Bags', Icons.inventory),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 32),
 
@@ -383,6 +458,40 @@ class VendorDetailsBottomSheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMaterialRow(String materialName, String quantity, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: const Color(0xFF06B6D4), size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            materialName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Text(
+          quantity,
+          style: const TextStyle(
+            color: Color(0xFF10B981),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }

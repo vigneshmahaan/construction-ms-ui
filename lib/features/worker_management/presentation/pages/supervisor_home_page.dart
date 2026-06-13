@@ -2,17 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:construction_ms_ui/core/theme/app_colors.dart';
 import 'package:construction_ms_ui/features/worker_management/presentation/widgets/worker_drawer.dart';
 import 'package:construction_ms_ui/features/worker_management/presentation/pages/worker_project_details_page.dart';
+import 'package:construction_ms_ui/shared/services/auth_service.dart';
+import 'package:construction_ms_ui/shared/services/worker_service.dart';
 
 class SupervisorHomePage extends StatelessWidget {
   const SupervisorHomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Mock assigned projects
-    final assignedProjects = [
-      {'id': 'p1', 'name': 'Dream Home Villa', 'status': 'In Progress', 'location': 'Chennai'},
-      {'id': 'p2', 'name': 'City Mall Renovation', 'status': 'Planning', 'location': 'Bangalore'},
+    final currentWorkerId = AuthService.currentWorkerId;
+    final worker = WorkerService().workers.firstWhere(
+      (w) => w.id == currentWorkerId,
+      orElse: () => WorkerService().workers.first,
+    );
+
+    // Master list of mock projects to match IDs against
+    final allProjects = [
+      {'id': 'home1', 'name': 'Home 1', 'status': 'In Progress', 'location': 'Chennai'},
+      {'id': 'home2', 'name': 'Home 2', 'status': 'Planning', 'location': 'Bangalore'},
     ];
+
+    // Filter to only the assigned projects for this worker
+    final assignedProjects = allProjects
+        .where((p) => worker.assignedProjectIds.contains(p['id']))
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
@@ -38,9 +51,9 @@ class SupervisorHomePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Welcome, Suresh',
-                style: TextStyle(color: AppColors.textDark, fontSize: 24, fontWeight: FontWeight.bold),
+              Text(
+                'Welcome, ${worker.name}',
+                style: const TextStyle(color: AppColors.textDark, fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               const Text(

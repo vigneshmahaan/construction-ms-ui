@@ -5,6 +5,8 @@ class AuthService {
   static const _keyIsFirstTime = 'isFirstTime';
   static const _keyUserRole = 'userRole';
 
+  static String? currentWorkerId;
+
   /// Returns true if this is the very first app launch.
   static Future<bool> isFirstTime() async {
     final prefs = await SharedPreferences.getInstance();

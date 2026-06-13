@@ -4,7 +4,8 @@ import 'package:construction_ms_ui/features/stocks_hub/data/models/stock_model.d
 import 'package:construction_ms_ui/features/stocks_hub/presentation/widgets/stock_details_sheet.dart';
 
 class StocksHubPage extends StatefulWidget {
-  const StocksHubPage({super.key});
+  final bool isReadOnly;
+  const StocksHubPage({super.key, this.isReadOnly = false});
 
   @override
   State<StocksHubPage> createState() => _StocksHubPageState();
@@ -58,6 +59,28 @@ class _StocksHubPageState extends State<StocksHubPage> {
       ),
       body: Column(
         children: [
+          if (widget.isReadOnly)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(left: 16, right: 16, top: 16),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Read-Only Mode. You can view stocks but cannot edit them.',
+                      style: TextStyle(color: Colors.amber.shade900, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           _buildSummaryCards(),
           _buildFilters(),
           _buildListHeader(),

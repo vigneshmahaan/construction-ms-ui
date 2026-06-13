@@ -6,7 +6,8 @@ import 'package:construction_ms_ui/features/vehicles/presentation/widgets/add_ve
 import 'package:construction_ms_ui/features/vehicles/presentation/widgets/vehicle_details_sheet.dart';
 
 class VehiclesPage extends StatefulWidget {
-  const VehiclesPage({super.key});
+  final bool isReadOnly;
+  const VehiclesPage({super.key, this.isReadOnly = false});
 
   @override
   State<VehiclesPage> createState() => _VehiclesPageState();
@@ -63,15 +64,43 @@ class _VehiclesPageState extends State<VehiclesPage> {
         centerTitle: true,
       ),
       drawer: const CustomDrawer(),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _vehicles.length,
+      body: Column(
+        children: [
+          if (widget.isReadOnly)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Read-Only Mode. You can view vehicles but cannot edit or add them.',
+                      style: TextStyle(color: Colors.amber.shade900, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: _vehicles.length,
         separatorBuilder: (context, index) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          return _buildVehicleCard(_vehicles[index]);
-        },
+              itemBuilder: (context, index) {
+                return _buildVehicleCard(_vehicles[index]);
+              },
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: widget.isReadOnly ? null : FloatingActionButton(
         onPressed: _showAddVehicleSheet,
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),

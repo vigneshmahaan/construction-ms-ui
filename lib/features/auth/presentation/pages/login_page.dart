@@ -8,7 +8,9 @@ import 'package:construction_ms_ui/features/worker_management/presentation/pages
 import 'package:construction_ms_ui/features/worker_management/presentation/pages/project_manager_home_page.dart';
 import 'package:construction_ms_ui/features/worker_management/presentation/pages/supervisor_home_page.dart';
 import 'package:construction_ms_ui/features/auth/presentation/pages/complete_profile_page.dart';
-import 'package:construction_ms_ui/shared/models/worker_role.dart';
+import 'package:construction_ms_ui/shared/services/worker_service.dart';
+import 'package:construction_ms_ui/core/network/api_service.dart';
+import 'package:construction_ms_ui/shared/utils/ui_utils.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,43 +21,82 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   UserRole _selectedRole = UserRole.admin;
-  WorkerRole _selectedWorkerRole = WorkerRole.siteEngineer;
+  String _selectedWorkerRole = 'Site Engineer';
   bool _isOtpSent = false;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
 
-  void _onGetOtp() {
-    setState(() {
-      _isOtpSent = true;
-    });
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void _onGetOtp() async {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      UiUtils.showCustomSnackBar(context: context, message: 'Please enter a phone number');
+      return;
+    }
+
+    try {
+      final api = ApiService();
+      final res = await api.post('/auth/check-phone', {'phone': phone});
+      if (res['exists'] == true) {
+        setState(() {
+          _isOtpSent = true;
+          // Optionally set the role if returned
+        });
+      } else {
+        UiUtils.showCustomSnackBar(context: context, message: 'You need to sign up first.');
+      }
+    } catch (e) {
+      UiUtils.showCustomSnackBar(context: context, message: 'Error connecting to server.');
+    }
   }
 
   void _onSignIn() async {
-    await AuthService.saveRole(_selectedRole);
-    if (!mounted) return;
+    final phone = _phoneController.text.trim();
+    final otp = _otpController.text.trim();
+    
+    try {
+      final api = ApiService();
+      final res = await api.post('/auth/login', {'phone': phone, 'otp': otp});
+      
+      ApiService.currentUserId = res['id'];
+      ApiService.currentCompanyId = res['companyId'];
 
-    Widget destination;
-    switch (_selectedRole) {
-      case UserRole.admin:
-        destination = const HomePage();
-        break;
-      case UserRole.client:
-        destination = const ClientHomePage();
-        break;
-      case UserRole.worker:
-        switch (_selectedWorkerRole) {
-          case WorkerRole.siteEngineer:
-          case WorkerRole.projectManager:
-          case WorkerRole.supervisor:
-            destination = const SupervisorHomePage();
-            break;
-        }
-        break;
+      final String roleStr = res['role'] ?? '';
+      UserRole assignedRole = _selectedRole;
+      if (roleStr == 'ADMIN') {
+        assignedRole = UserRole.admin;
+      } else if (roleStr == 'CLIENT') {
+        assignedRole = UserRole.client;
+      } else if (roleStr == 'WORKER') {
+        assignedRole = UserRole.worker;
+      }
+
+      await AuthService.saveRole(assignedRole);
+      if (!mounted) return;
+
+      Widget destination;
+      switch (assignedRole) {
+        case UserRole.admin:
+          destination = const HomePage();
+          break;
+        case UserRole.client:
+          destination = const ClientHomePage();
+          break;
+        case UserRole.worker:
+          destination = const SupervisorHomePage(); // Assuming Supervisor for all workers currently
+          break;
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => destination),
+      );
+    } catch (e) {
+      UiUtils.showCustomSnackBar(context: context, message: 'Sign in failed. You may need to sign up.');
     }
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => destination),
-    );
   }
 
   @override
@@ -235,16 +276,16 @@ class _LoginPageState extends State<LoginPage> {
             border: Border.all(color: Colors.white10),
           ),
           child: DropdownButtonHideUnderline(
-            child: DropdownButton<WorkerRole>(
+            child: DropdownButton<String>(
               value: _selectedWorkerRole,
               isExpanded: true,
               dropdownColor: const Color(0xFF1E293B),
               icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white54),
-              items: WorkerRole.values.map((role) {
+              items: ['Site Engineer', 'Project Manager', 'Supervisor'].map((role) {
                 return DropdownMenuItem(
                   value: role,
                   child: Text(
-                    role.label,
+                    role,
                     style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 );

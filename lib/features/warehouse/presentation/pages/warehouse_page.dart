@@ -3,7 +3,8 @@ import 'package:construction_ms_ui/features/warehouse/data/mock_warehouse_data.d
 import 'package:construction_ms_ui/features/warehouse/presentation/pages/warehouse_details_page.dart';
 
 class WarehousePage extends StatefulWidget {
-  const WarehousePage({super.key});
+  final bool isReadOnly;
+  const WarehousePage({super.key, this.isReadOnly = false});
 
   @override
   State<WarehousePage> createState() => _WarehousePageState();
@@ -45,13 +46,35 @@ class _WarehousePageState extends State<WarehousePage> {
           style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: widget.isReadOnly ? null : FloatingActionButton(
         onPressed: _showCreateWarehouseModal,
         backgroundColor: const Color(0xFF06B6D4),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
         children: [
+          if (widget.isReadOnly)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Read-Only Mode. You can view warehouses but cannot edit them.',
+                      style: TextStyle(color: Colors.amber.shade900, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           _buildFilters(),
           Expanded(
             child: ListView.builder(

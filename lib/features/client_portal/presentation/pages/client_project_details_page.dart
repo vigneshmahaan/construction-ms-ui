@@ -97,7 +97,7 @@ class _ClientProjectDetailsPageState extends State<ClientProjectDetailsPage> wit
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
   }
 
   @override
@@ -155,6 +155,7 @@ class _ClientProjectDetailsPageState extends State<ClientProjectDetailsPage> wit
                   _buildOverviewTab(),
                   _buildPaymentsTab(),
                   _buildTasksTab(),
+                  _buildDailyReportsTab(),
                   _buildDocumentsTab(),
                   _buildVehiclesTab(),
                   _buildMaterialsTab(),
@@ -249,11 +250,13 @@ class _ClientProjectDetailsPageState extends State<ClientProjectDetailsPage> wit
         indicatorColor: AppColors.primary,
         indicatorWeight: 3,
         tabAlignment: TabAlignment.start,
+        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
         tabs: const [
           Tab(text: 'Overview'),
           Tab(text: 'Payments'),
           Tab(text: 'Tasks'),
-          Tab(text: 'Files'),
+          Tab(text: 'Daily Reports'),
+          Tab(text: 'Documents'),
           Tab(text: 'Vehicles'),
           Tab(text: 'Materials'),
           Tab(text: 'Workforce'),
@@ -445,6 +448,102 @@ class _ClientProjectDetailsPageState extends State<ClientProjectDetailsPage> wit
         const SizedBox(height: 4),
         Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+      ],
+    );
+  }
+
+  // ==========================================
+  // TAB: DAILY REPORTS
+  // ==========================================
+  Widget _buildDailyReportsTab() {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text(
+          'Timeline of Progress',
+          style: TextStyle(color: AppColors.textDark, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        _buildTimelineItem(
+          date: '12-06-2026',
+          title: 'Concrete Curing & Steel Binding',
+          description: 'Curing of the foundation completed. Steel binders have started forming the columns.',
+          icon: Icons.check_circle_outline,
+          color: Colors.green,
+          isLast: false,
+        ),
+        _buildTimelineItem(
+          date: '11-06-2026',
+          title: 'Foundation Concreting',
+          description: 'Poured 400 cubic meters of concrete for the main block foundation.',
+          icon: Icons.foundation,
+          color: Colors.blue,
+          isLast: false,
+        ),
+        _buildTimelineItem(
+          date: '10-06-2026',
+          title: 'Site Preparation & Excavation',
+          description: 'Cleared debris and excavated trenches for foundation.',
+          icon: Icons.landscape,
+          color: Colors.orange,
+          isLast: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimelineItem({
+    required String date,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+    required bool isLast,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 80,
+                color: Colors.grey.shade300,
+              ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                date,
+                style: const TextStyle(color: Colors.black45, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: const TextStyle(color: Colors.black87, fontSize: 13),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
       ],
     );
   }

@@ -12,6 +12,33 @@ class _AddVendorBottomSheetState extends State<AddVendorBottomSheet> {
   String _vendorType = 'Business';
   String _selectedCategory = 'Material Supplier';
 
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  
+  bool _isFormValid = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_validateForm);
+    _phoneController.addListener(_validateForm);
+  }
+
+  void _validateForm() {
+    final isValid = _nameController.text.trim().isNotEmpty && _phoneController.text.trim().isNotEmpty;
+    if (_isFormValid != isValid) {
+      setState(() => _isFormValid = isValid);
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
   final List<String> _categories = [
     'Material Supplier',
     'Equipment Rental',
@@ -99,7 +126,7 @@ class _AddVendorBottomSheetState extends State<AddVendorBottomSheet> {
                   ),
                   const SizedBox(height: 20),
 
-                  _buildTextField('NAME *', 'Full name or company name'),
+                  _buildTextField('NAME *', 'Full name or company name', controller: _nameController),
                   
                   const Text(
                     'CATEGORY',
@@ -147,7 +174,7 @@ class _AddVendorBottomSheetState extends State<AddVendorBottomSheet> {
 
                   _buildTextField('COMPANY NAME', 'Company name (if business)'),
                   _buildTextField('EMAIL', 'vendor@example.com'),
-                  _buildTextField('PHONE *', '+91 98451 XXXXX'),
+                  _buildTextField('PHONE *', '+91 98451 XXXXX', controller: _phoneController),
                   _buildTextField('BANK ACCOUNT', 'Account number'),
                   _buildTextField('GST NUMBER', 'GST number'),
                   _buildTextField('BILLING ADDRESS', 'Billing address'),
@@ -163,27 +190,54 @@ class _AddVendorBottomSheetState extends State<AddVendorBottomSheet> {
           Padding(
             padding: const EdgeInsets.only(top: 16),
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: (_isFormValid && !_isLoading) ? _saveVendor : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF06B6D4), // Cyan theme
+                disabledBackgroundColor: const Color(0xFF06B6D4).withValues(alpha: 0.3),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
-                'Save Vendor',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: _isLoading
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text(
+                      'Save Vendor',
+                      style: TextStyle(
+                        color: _isFormValid ? Colors.white : Colors.white54,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _saveVendor() async {
+    if (!_isFormValid) return;
+    
+    setState(() => _isLoading = true);
+    try {
+      await Future.delayed(const Duration(milliseconds: 500)); // Simulate API call
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vendor added successfully!'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add vendor: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Widget _buildRadioButton(String title) {
@@ -233,7 +287,7 @@ class _AddVendorBottomSheetState extends State<AddVendorBottomSheet> {
     );
   }
 
-  Widget _buildTextField(String label, String hint, {int maxLines = 1}) {
+  Widget _buildTextField(String label, String hint, {int maxLines = 1, TextEditingController? controller}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -256,6 +310,7 @@ class _AddVendorBottomSheetState extends State<AddVendorBottomSheet> {
               border: Border.all(color: Colors.white10),
             ),
             child: TextField(
+              controller: controller,
               maxLines: maxLines,
               style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(

@@ -2,46 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:construction_ms_ui/core/theme/app_colors.dart';
 
-class StepFiveAgreements extends StatefulWidget {
-  const StepFiveAgreements({super.key});
+class StepFiveAgreements extends StatelessWidget {
+  final TextEditingController notesController;
+  final List<PlatformFile> selectedFiles;
+  final VoidCallback onPickFiles;
+  final Function(int) onRemoveFile;
 
-  @override
-  State<StepFiveAgreements> createState() => _StepFiveAgreementsState();
-}
-
-class _StepFiveAgreementsState extends State<StepFiveAgreements> {
-  final TextEditingController _notesController = TextEditingController();
-  final List<PlatformFile> _selectedFiles = [];
-
-  @override
-  void dispose() {
-    _notesController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickFiles() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg'],
-      );
-
-      if (result != null) {
-        setState(() {
-          _selectedFiles.addAll(result.files);
-        });
-      }
-    } catch (e) {
-      debugPrint("Error picking files: $e");
-    }
-  }
-
-  void _removeFile(int index) {
-    setState(() {
-      _selectedFiles.removeAt(index);
-    });
-  }
+  const StepFiveAgreements({
+    super.key,
+    required this.notesController,
+    required this.selectedFiles,
+    required this.onPickFiles,
+    required this.onRemoveFile,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +45,7 @@ class _StepFiveAgreementsState extends State<StepFiveAgreements> {
             ),
           ),
           OutlinedButton.icon(
-            onPressed: _pickFiles,
+            onPressed: onPickFiles,
             icon: const Icon(Icons.file_upload_outlined, color: AppColors.primary),
             label: const Text(
               'Select Files',
@@ -91,13 +64,13 @@ class _StepFiveAgreementsState extends State<StepFiveAgreements> {
             style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
           ),
           const SizedBox(height: 16),
-          if (_selectedFiles.isNotEmpty)
+          if (selectedFiles.isNotEmpty)
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _selectedFiles.length,
+              itemCount: selectedFiles.length,
               itemBuilder: (context, index) {
-                final file = _selectedFiles[index];
+                final file = selectedFiles[index];
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -120,7 +93,7 @@ class _StepFiveAgreementsState extends State<StepFiveAgreements> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.close, color: Colors.black54, size: 20),
-                        onPressed: () => _removeFile(index),
+                        onPressed: () => onRemoveFile(index),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -143,7 +116,7 @@ class _StepFiveAgreementsState extends State<StepFiveAgreements> {
             ),
           ),
           TextFormField(
-            controller: _notesController,
+            controller: notesController,
             maxLines: 6,
             style: const TextStyle(color: AppColors.textDark, fontSize: 14),
             decoration: InputDecoration(

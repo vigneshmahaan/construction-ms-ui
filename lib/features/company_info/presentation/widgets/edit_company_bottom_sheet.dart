@@ -2,13 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:construction_ms_ui/core/theme/app_colors.dart';
 
 class EditCompanyBottomSheet extends StatefulWidget {
-  const EditCompanyBottomSheet({super.key});
+  final String initialName;
+  final String initialAddress;
+  final String initialGst;
+  final String initialPan;
+  final String initialPhone;
+  final String initialEmail;
+  final String initialWebsite;
+
+  const EditCompanyBottomSheet({
+    super.key,
+    required this.initialName,
+    required this.initialAddress,
+    required this.initialGst,
+    required this.initialPan,
+    required this.initialPhone,
+    required this.initialEmail,
+    required this.initialWebsite,
+  });
 
   @override
   State<EditCompanyBottomSheet> createState() => _EditCompanyBottomSheetState();
 }
 
 class _EditCompanyBottomSheetState extends State<EditCompanyBottomSheet> {
+  late TextEditingController _nameController;
+  late TextEditingController _addressController;
+  late TextEditingController _gstController;
+  late TextEditingController _panController;
+  late TextEditingController _phoneController;
+  late TextEditingController _emailController;
+  late TextEditingController _websiteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+    _addressController = TextEditingController(text: widget.initialAddress);
+    _gstController = TextEditingController(text: widget.initialGst);
+    _panController = TextEditingController(text: widget.initialPan);
+    _phoneController = TextEditingController(text: widget.initialPhone);
+    _emailController = TextEditingController(text: widget.initialEmail);
+    _websiteController = TextEditingController(text: widget.initialWebsite);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _addressController.dispose();
+    _gstController.dispose();
+    _panController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _websiteController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -69,35 +118,26 @@ class _EditCompanyBottomSheetState extends State<EditCompanyBottomSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildTextField('COMPANY NAME *', 'RK Constructions Pvt Ltd'),
-                  _buildTextField('ADDRESS', '14, Industrial Estate, Chennai – 600058, Tamil Nadu', maxLines: 2),
+                  _buildTextField('COMPANY NAME *', _nameController),
+                  _buildTextField('ADDRESS', _addressController, maxLines: 2),
                   
                   Row(
                     children: [
-                      Expanded(child: _buildTextField('GST NUMBER', '33AABCC1234D1Z5')),
+                      Expanded(child: _buildTextField('GST NUMBER', _gstController)),
                       const SizedBox(width: 16),
-                      Expanded(child: _buildTextField('PAN NUMBER', 'AABCC1234D')),
+                      Expanded(child: _buildTextField('PAN NUMBER', _panController)),
                     ],
                   ),
                   
                   Row(
                     children: [
-                      Expanded(child: _buildTextField('PHONE', '+91 44 2345 6789')),
+                      Expanded(child: _buildTextField('PHONE', _phoneController)),
                       const SizedBox(width: 16),
-                      Expanded(child: _buildTextField('EMAIL', 'info@rkconstructions.com')),
+                      Expanded(child: _buildTextField('EMAIL', _emailController)),
                     ],
                   ),
                   
-                  _buildTextField('WEBSITE', 'www.rkconstructions.com'),
-                  _buildTextField('BANK NAME', 'ICICI Bank'),
-                  
-                  Row(
-                    children: [
-                      Expanded(child: _buildTextField('ACCOUNT NO.', 'XXXX XXXX 4521')),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildTextField('IFSC CODE', 'ICIC0001234')),
-                    ],
-                  ),
+                  _buildTextField('WEBSITE', _websiteController),
                   const SizedBox(height: 16),
                 ],
               ),
@@ -108,9 +148,19 @@ class _EditCompanyBottomSheetState extends State<EditCompanyBottomSheet> {
           Padding(
             padding: const EdgeInsets.only(top: 16),
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pop(context, {
+                  'name': _nameController.text.trim(),
+                  'address': _addressController.text.trim(),
+                  'gstNumber': _gstController.text.trim(),
+                  'panNumber': _panController.text.trim(),
+                  'phone': _phoneController.text.trim(),
+                  'email': _emailController.text.trim(),
+                  'website': _websiteController.text.trim(),
+                });
+              },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF06B6D4), // Orange from mockup, wait, user said "electric cyan is main" in previous prompt, but here it's orange in mockup. Let me use Cyan as requested previously "color is takes from other pages electric cyan is main do now". Actually I'll use 0xFFF59E0B since mockup has it orange, or wait, user didn't specify color for this specific page, but earlier said "electric cyan is main". Let's stick to Orange like the mockup for this specific button, or use AppColors.primary if it's cyan. Wait, mockup shows orange. Let me use Orange.
+                backgroundColor: const Color(0xFF06B6D4), // Electric cyan
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -131,7 +181,7 @@ class _EditCompanyBottomSheetState extends State<EditCompanyBottomSheet> {
     );
   }
 
-  Widget _buildTextField(String label, String initialValue, {int maxLines = 1}) {
+  Widget _buildTextField(String label, TextEditingController controller, {int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -154,7 +204,7 @@ class _EditCompanyBottomSheetState extends State<EditCompanyBottomSheet> {
               border: Border.all(color: Colors.white10),
             ),
             child: TextField(
-              controller: TextEditingController(text: initialValue),
+              controller: controller,
               maxLines: maxLines,
               style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: const InputDecoration(

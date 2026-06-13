@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:construction_ms_ui/features/home/presentation/widgets/custom_drawer.dart';
 import 'package:construction_ms_ui/features/projects/presentation/pages/new_project_page.dart';
 import 'package:construction_ms_ui/features/projects/presentation/pages/project_details_page.dart';
+import 'package:construction_ms_ui/core/network/api_service.dart';
+import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +15,32 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String _selectedFilter = 'All';
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _projects = [];
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProjects();
+  }
+
+  Future<void> _fetchProjects() async {
+    try {
+      final response = await _apiService.get('/projects');
+      if (response != null && response is List) {
+        setState(() {
+          _projects = List<Map<String, dynamic>>.from(response);
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('Error fetching projects: $e');
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,48 +125,22 @@ class _HomePageState extends State<HomePage> {
             _buildSearchBar(),
             _buildFilters(),
             Expanded(
-              child: ListView(
+              child: _isLoading 
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4)))
+                : _projects.isEmpty 
+                  ? const Center(child: Text('No projects found', style: TextStyle(color: Colors.grey)))
+                  : ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 children: [
-                  if (_selectedFilter == 'All' || _selectedFilter == 'Commercial') ...[
-                    _buildProjectCard(
-                      type: 'COMMERCIAL',
-                      title: 'Metro Towers Phase 2',
-                      subtitle: '12 Floors · Duplex · Chennai, TN',
-                      progress: 0.72,
-                      progressText: '72%',
-                      dateRange: 'Jan 2025 - Dec 2025',
-                      statusColor: Colors.teal,
-                      avatars: ['RK', 'SK', 'PM'],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_selectedFilter == 'All' || _selectedFilter == 'Residential') ...[
-                    _buildProjectCard(
-                      type: 'RESIDENTIAL',
-                      title: 'Sunrise Villa',
-                      subtitle: '3 Floors · Simplex · Coimbatore, TN',
-                      progress: 0.45,
-                      progressText: '45%',
-                      dateRange: 'Mar 2025 - Nov 2025',
-                      statusColor: Colors.green,
-                      avatars: ['MK', 'VR'],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  if (_selectedFilter == 'All' || _selectedFilter == 'Commercial') ...[
-                    _buildProjectCard(
-                      type: 'COMMERCIAL',
-                      title: 'Green Valley Complex',
-                      subtitle: '8 Floors · Duplex · Madurai, TN',
-                      progress: 0.91,
-                      progressText: '91%',
-                      dateRange: 'Sep 2024 - Jun 2025',
-                      statusColor: Colors.amber,
-                      avatars: ['AK'],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                  ..._projects.where((p) {
+                    if (_selectedFilter == 'All') return true;
+                    if (_selectedFilter == 'Commercial' && (p['projectType']?.toString().toUpperCase() == 'COMMERCIAL')) return true;
+                    if (_selectedFilter == 'Residential' && (p['projectType']?.toString().toUpperCase() == 'RESIDENTIAL')) return true;
+                    return false;
+                  }).map((p) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _buildProjectCard(p),
+                  )),
                   const SizedBox(height: 80), // Fab space
                 ],
               ),
@@ -147,10 +149,15 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
+        onPressed: () async {
+          final result = await Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const NewProjectPage()),
           );
+          if (result != null && result is Map<String, dynamic>) {
+            setState(() {
+              _projects.insert(0, result);
+            });
+          }
         },
         backgroundColor: const Color(0xFF06B6D4),
         child: const Icon(Icons.add, color: Colors.white, size: 28),
@@ -244,16 +251,43 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildProjectCard({
-    required String type,
-    required String title,
-    required String subtitle,
-    required double progress,
-    required String progressText,
-    required String dateRange,
-    required Color statusColor,
-    required List<String> avatars,
-  }) {
+  Widget _buildProjectCard(Map<String, dynamic> project) {
+    final type = project['projectType']?.toString().toUpperCase() ?? 'UNKNOWN';
+    final title = project['name'] ?? 'Unnamed Project';
+    
+    String subtitle = project['address'] ?? '';
+    if (project['numFloors'] != null) {
+      subtitle = '${project['numFloors']} Floors · $subtitle';
+    }
+
+    final progress = 0.0; // Future: Calculate from DB
+    final progressText = '0%';
+    
+    String dateRange = 'Not Set';
+    if (project['startDate'] != null && project['endDate'] != null) {
+      final start = DateTime.tryParse(project['startDate']);
+      final end = DateTime.tryParse(project['endDate']);
+      if (start != null && end != null) {
+        dateRange = '${DateFormat('MMM yyyy').format(start)} - ${DateFormat('MMM yyyy').format(end)}';
+      }
+    }
+
+    final statusColor = Colors.teal;
+    
+    List<String> avatars = [];
+    if (project['assignments'] != null && project['assignments'] is List) {
+      for (var a in project['assignments']) {
+        if (a['user'] != null && a['user']['fullName'] != null) {
+          final nameParts = a['user']['fullName'].toString().split(' ');
+          if (nameParts.length >= 2) {
+            avatars.add('${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase());
+          } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
+            avatars.add('${nameParts[0][0]}'.toUpperCase());
+          }
+        }
+      }
+    }
+    if (avatars.isEmpty) avatars = ['?'];
     final isCommercial = type == 'COMMERCIAL';
     final badgeColor = isCommercial ? const Color(0xFFDBEAFE) : const Color(0xFFD1FAE5);
     final badgeTextColor = isCommercial ? const Color(0xFF2563EB) : const Color(0xFF059669);
@@ -261,17 +295,14 @@ class _HomePageState extends State<HomePage> {
 
     return GestureDetector(
       onTap: () {
+        if (project['id'] == null) return;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => ProjectDetailsPage(
-              title: title,
-              type: type,
-              subtitle: subtitle,
-              progress: progress,
-              dateRange: dateRange,
+              projectId: project['id'],
             ),
           ),
-        );
+        ).then((_) => _fetchProjects());
       },
       child: Container(
         padding: const EdgeInsets.all(16),
