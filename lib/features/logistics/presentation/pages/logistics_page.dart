@@ -6,7 +6,8 @@ import 'package:construction_ms_ui/features/logistics/presentation/widgets/creat
 import 'package:construction_ms_ui/features/logistics/presentation/widgets/trip_details_sheet.dart';
 
 class LogisticsPage extends StatefulWidget {
-  const LogisticsPage({super.key});
+  final bool isReadOnly;
+  const LogisticsPage({super.key, this.isReadOnly = false});
 
   @override
   State<LogisticsPage> createState() => _LogisticsPageState();
@@ -68,15 +69,43 @@ class _LogisticsPageState extends State<LogisticsPage> {
         centerTitle: true,
       ),
       drawer: const CustomDrawer(),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _trips.length,
+      body: Column(
+        children: [
+          if (widget.isReadOnly)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Read-Only Mode. You can view trips but cannot edit or add them.',
+                      style: TextStyle(color: Colors.amber.shade900, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: _trips.length,
         separatorBuilder: (context, index) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          return _buildTripCard(_trips[index]);
-        },
+              itemBuilder: (context, index) {
+                return _buildTripCard(_trips[index]);
+              },
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: widget.isReadOnly ? null : FloatingActionButton(
         onPressed: _showCreateLogisticSheet,
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),

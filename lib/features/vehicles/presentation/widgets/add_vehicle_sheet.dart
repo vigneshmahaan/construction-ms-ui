@@ -23,6 +23,23 @@ class _AddVehicleSheetState extends State<AddVehicleSheet> {
 
   final List<File> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
+  
+  bool _isFormValid = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _typeController.addListener(_validateForm);
+    _numberPlateController.addListener(_validateForm);
+  }
+
+  void _validateForm() {
+    final isValid = _typeController.text.trim().isNotEmpty && _numberPlateController.text.trim().isNotEmpty;
+    if (_isFormValid != isValid) {
+      setState(() => _isFormValid = isValid);
+    }
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -69,14 +86,11 @@ class _AddVehicleSheetState extends State<AddVehicleSheet> {
     );
   }
 
-  void _addVehicle() {
+  void _addVehicle() async {
     final type = _typeController.text.trim();
     final numberPlate = _numberPlateController.text.trim();
     
-    if (type.isEmpty || numberPlate.isEmpty) {
-      // Basic validation
-      return;
-    }
+    if (!_isFormValid) return;
     
     final newVehicle = Vehicle(
       id: 'V-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
@@ -94,8 +108,27 @@ class _AddVehicleSheetState extends State<AddVehicleSheet> {
       assignedDriverPhone: '',
     );
     
-    widget.onSave(newVehicle);
-    Navigator.of(context).pop();
+    setState(() => _isLoading = true);
+    try {
+      // Simulate or await API
+      await Future.delayed(const Duration(milliseconds: 500)); 
+      widget.onSave(newVehicle);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vehicle added successfully!'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add vehicle: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -216,16 +249,23 @@ class _AddVehicleSheetState extends State<AddVehicleSheet> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _addVehicle,
+                onPressed: (_isFormValid && !_isLoading) ? _addVehicle : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
+                  disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.3),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text(
-                  'Add Vehicle',
-                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                child: _isLoading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(
+                        'Add Vehicle',
+                        style: TextStyle(
+                          color: _isFormValid ? Colors.white : Colors.white54, 
+                          fontSize: 16, 
+                          fontWeight: FontWeight.bold
+                        ),
+                      ),
               ),
             ),
           ],

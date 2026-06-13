@@ -21,14 +21,18 @@ class TeamMember {
 }
 
 class StepThreeTeamDetails extends StatefulWidget {
-  const StepThreeTeamDetails({super.key});
+  final List<TeamMember> teamMembers;
+
+  const StepThreeTeamDetails({
+    super.key,
+    required this.teamMembers,
+  });
 
   @override
   State<StepThreeTeamDetails> createState() => _StepThreeTeamDetailsState();
 }
 
 class _StepThreeTeamDetailsState extends State<StepThreeTeamDetails> {
-  final List<TeamMember> _teamMembers = [];
   final WorkerService _workerService = WorkerService();
 
   @override
@@ -109,7 +113,7 @@ class _StepThreeTeamDetailsState extends State<StepThreeTeamDetails> {
                             itemBuilder: (context, index) {
                               final worker = workers[index];
                               // Check if already assigned
-                              final isAssigned = _teamMembers.any((m) => m.phone == worker.phone);
+                              final isAssigned = widget.teamMembers.any((m) => m.phone == worker.phone);
 
                               return Container(
                                 padding: const EdgeInsets.all(12),
@@ -317,7 +321,7 @@ class _StepThreeTeamDetailsState extends State<StepThreeTeamDetails> {
                       child: ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            _teamMembers.add(TeamMember(
+                            widget.teamMembers.add(TeamMember(
                               phone: worker.phone,
                               name: worker.name,
                               role: worker.role,
@@ -401,7 +405,7 @@ class _StepThreeTeamDetailsState extends State<StepThreeTeamDetails> {
             ],
           ),
           const SizedBox(height: 24),
-          if (_teamMembers.isEmpty)
+          if (widget.teamMembers.isEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 40),
@@ -415,10 +419,10 @@ class _StepThreeTeamDetailsState extends State<StepThreeTeamDetails> {
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _teamMembers.length,
+              itemCount: widget.teamMembers.length,
               separatorBuilder: (context, index) => const Divider(color: Color(0xFFE2E8F0)),
               itemBuilder: (context, index) {
-                final member = _teamMembers[index];
+                final member = widget.teamMembers[index];
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Row(
@@ -474,7 +478,7 @@ class _StepThreeTeamDetailsState extends State<StepThreeTeamDetails> {
                         icon: const Icon(Icons.delete_outline, color: AppColors.error),
                         onPressed: () {
                           setState(() {
-                            _teamMembers.removeAt(index);
+                            widget.teamMembers.removeAt(index);
                           });
                         },
                       ),

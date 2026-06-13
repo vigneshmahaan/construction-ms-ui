@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:construction_ms_ui/core/theme/app_colors.dart';
+import 'package:construction_ms_ui/shared/presentation/widgets/chat_interface.dart';
 
 class ClientContactContractorPage extends StatelessWidget {
   const ClientContactContractorPage({super.key});
@@ -17,24 +18,25 @@ class ClientContactContractorPage extends StatelessWidget {
           style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.contact_support_rounded, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            const Text(
-              'Contact Your Contractor',
-              style: TextStyle(color: AppColors.textDark, fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Reach out for questions, change requests, or support.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.black54, fontSize: 14),
-            ),
-          ],
-        ),
+      body: ChatInterface(
+        title: 'Admin Support',
+        subtitle: 'Usually replies in a few hours',
+        initialMessages: [
+          ChatMessage(
+            senderId: 'admin',
+            senderName: 'Admin',
+            text: 'Hello! How can we help you today with your project?',
+            timestamp: DateTime.now().subtract(const Duration(hours: 24)),
+            isMe: false,
+          ),
+          ChatMessage(
+            senderId: 'me',
+            senderName: 'You',
+            text: 'I had a question about the tiles for the bathroom.',
+            timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
+            isMe: true,
+          ),
+        ],
       ),
     );
   }

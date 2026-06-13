@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:construction_ms_ui/shared/models/user_role.dart';
 import 'package:construction_ms_ui/shared/services/auth_service.dart';
 import 'package:construction_ms_ui/features/home/presentation/pages/home_page.dart';
 import 'package:construction_ms_ui/features/client_portal/presentation/pages/client_home_page.dart';
 import 'package:construction_ms_ui/features/auth/presentation/pages/login_page.dart';
+import 'package:construction_ms_ui/core/network/api_service.dart';
+import 'package:construction_ms_ui/shared/utils/ui_utils.dart';
 
 class CompleteProfilePage extends StatefulWidget {
   const CompleteProfilePage({super.key});
@@ -15,54 +20,65 @@ class CompleteProfilePage extends StatefulWidget {
 }
 
 class _CompleteProfilePageState extends State<CompleteProfilePage> {
-  // Role selection — Admin and Client only (Workers are created by Admin)
+  int _currentStep = 0; // 0: Personal Info, 1: Company Details
   UserRole _selectedRole = UserRole.admin;
 
+  // Step 1: Personal Info
   final TextEditingController _fullNameCtrl = TextEditingController();
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _usernameCtrl = TextEditingController();
-  final TextEditingController _companyCtrl = TextEditingController();
   final TextEditingController _phoneCtrl = TextEditingController();
   final TextEditingController _otpCtrl = TextEditingController();
+  File? _profileImage;
 
-  bool _isFormValid = false;
+  // Step 2: Company Info
+  final TextEditingController _companyCtrl = TextEditingController();
+  final TextEditingController _estYearCtrl = TextEditingController();
+  final TextEditingController _cityCtrl = TextEditingController();
+  final TextEditingController _stateCtrl = TextEditingController();
+  final TextEditingController _companyAddressCtrl = TextEditingController();
+  final TextEditingController _gstCtrl = TextEditingController();
+  final TextEditingController _panCtrl = TextEditingController();
+  final TextEditingController _companyPhoneCtrl = TextEditingController();
+  final TextEditingController _companyEmailCtrl = TextEditingController();
+  final TextEditingController _websiteCtrl = TextEditingController();
+  File? _companyLogo;
+
+  final ImagePicker _picker = ImagePicker();
+
+  bool _isStep1Valid = false;
+  bool _isStep2Valid = false;
   bool _isOtpSent = false;
   int _resendTimer = 30;
   Timer? _timer;
+  Timer? _debounce;
+  String? _usernameError;
+  List<String> _usernameSuggestions = [];
 
   @override
   void initState() {
     super.initState();
     _fullNameCtrl.addListener(_validateForm);
     _emailCtrl.addListener(_validateForm);
-    _usernameCtrl.addListener(_validateForm);
-    _companyCtrl.addListener(_validateForm);
+    _usernameCtrl.addListener(() {
+      _validateForm();
+      _onUsernameChanged();
+    });
     _phoneCtrl.addListener(_validateForm);
     _otpCtrl.addListener(_validateForm);
-  }
 
-  void _validateForm() {
-    final isValid = _fullNameCtrl.text.trim().isNotEmpty &&
-        _emailCtrl.text.trim().isNotEmpty &&
-        _usernameCtrl.text.trim().isNotEmpty &&
-        _companyCtrl.text.trim().isNotEmpty &&
-        _phoneCtrl.text.trim().isNotEmpty &&
-        _otpCtrl.text.trim().isNotEmpty;
+    _companyCtrl.addListener(_validateForm);
+    _estYearCtrl.addListener(_validateForm);
+    _cityCtrl.addListener(_validateForm);
+    _stateCtrl.addListener(_validateForm);
+    _companyAddressCtrl.addListener(_validateForm);
+    _gstCtrl.addListener(_validateForm);
+    _panCtrl.addListener(_validateForm);
+    _companyPhoneCtrl.addListener(_validateForm);
+    _companyEmailCtrl.addListener(_validateForm);
+    _websiteCtrl.addListener(_validateForm);
 
-    if (isValid != _isFormValid) {
-      setState(() {
-        _isFormValid = isValid;
-      });
-    }
-  }
-
-  void _startResendTimer() {
-    setState(() {
-      _isOtpSent = true;
-      _resendTimer = 30;
-    });
-
-    // Mocking OTP receipt
+    // Mock OTP
     _otpCtrl.text = '123456';
     _validateForm();
 
@@ -81,41 +97,213 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _debounce?.cancel();
     _fullNameCtrl.dispose();
     _emailCtrl.dispose();
     _usernameCtrl.dispose();
-    _companyCtrl.dispose();
     _phoneCtrl.dispose();
     _otpCtrl.dispose();
+
+    _companyCtrl.dispose();
+    _estYearCtrl.dispose();
+    _cityCtrl.dispose();
+    _stateCtrl.dispose();
+    _companyAddressCtrl.dispose();
+    _gstCtrl.dispose();
+    _panCtrl.dispose();
+    _companyPhoneCtrl.dispose();
+    _companyEmailCtrl.dispose();
+    _websiteCtrl.dispose();
     super.dispose();
   }
 
-  void _onContinue() async {
-    if (!_isFormValid) return;
+  Future<void> _pickImage(bool isCompany) async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        if (isCompany) {
+          _companyLogo = File(image.path);
+        } else {
+          _profileImage = File(image.path);
+        }
+      });
+    }
+  }
 
-    await AuthService.completeSetup(_selectedRole);
+  void _onUsernameChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _checkUsername();
+    });
+  }
 
-    if (!mounted) return;
-
-    Widget destination;
-    switch (_selectedRole) {
-      case UserRole.admin:
-        destination = const HomePage();
-        break;
-      case UserRole.client:
-        destination = const ClientHomePage();
-        break;
-      default:
-        destination = const HomePage();
+  Future<void> _checkUsername() async {
+    final username = _usernameCtrl.text.trim();
+    if (username.isEmpty) {
+      setState(() {
+        _usernameError = null;
+        _usernameSuggestions = [];
+      });
+      return;
     }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => destination),
+    try {
+      final api = ApiService();
+      final res = await api.post('/auth/check-username', {'username': username});
+      if (res['exists'] == true) {
+        setState(() {
+          _usernameError = 'Username is already taken';
+          if (res['suggestions'] != null) {
+            _usernameSuggestions = List<String>.from(res['suggestions']);
+          }
+        });
+      } else {
+        setState(() {
+          _usernameError = null;
+          _usernameSuggestions = [];
+        });
+      }
+    } catch (e) {
+      // ignore silently to not disrupt typing
+    }
+    _validateForm();
+  }
+
+  void _validateForm() {
+    final s1Valid = _fullNameCtrl.text.trim().isNotEmpty &&
+        _emailCtrl.text.trim().isNotEmpty &&
+        _usernameCtrl.text.trim().isNotEmpty &&
+        _phoneCtrl.text.trim().isNotEmpty &&
+        _otpCtrl.text.trim().isNotEmpty;
+
+    final s2Valid = _companyCtrl.text.trim().isNotEmpty &&
+        _companyAddressCtrl.text.trim().isNotEmpty;
+
+    setState(() {
+      _isStep1Valid = s1Valid;
+      _isStep2Valid = s2Valid;
+    });
+  }
+
+  void _startResendTimer() async {
+    final phone = _phoneCtrl.text.trim();
+    if (phone.isEmpty) {
+      UiUtils.showCustomSnackBar(context: context, message: 'Please enter a phone number');
+      return;
+    }
+
+    try {
+      final api = ApiService();
+      final res = await api.post('/auth/check-phone', {'phone': phone});
+      if (res['exists'] == true) {
+        UiUtils.showCustomSnackBar(context: context, message: 'This number is already signed up. Please log in.');
+        return;
+      }
+    } catch (e) {
+      UiUtils.showCustomSnackBar(context: context, message: 'Error connecting to server.');
+      return;
+    }
+
+    setState(() {
+      _isOtpSent = true;
+      _resendTimer = 30;
+    });
+    UiUtils.showCustomSnackBar(
+      context: context, 
+      message: 'OTP Sent! (Mock)', 
+      isError: false
     );
+  }
+
+  void _onContinue() async {
+    if (_currentStep == 0 && _selectedRole == UserRole.admin) {
+      if (!_isStep1Valid || _usernameError != null) return;
+      setState(() {
+        _currentStep = 1;
+      });
+      return;
+    }
+
+    if (_selectedRole == UserRole.admin && !_isStep2Valid) return;
+    if (_selectedRole == UserRole.client && (!_isStep1Valid || _usernameError != null)) return;
+
+    try {
+      final api = ApiService();
+      final payload = {
+        'role': _selectedRole == UserRole.admin ? 'ADMIN' : 'CLIENT',
+        'fullName': _fullNameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+        'username': _usernameCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+      };
+
+      if (_profileImage != null) {
+        final bytes = await _profileImage!.readAsBytes();
+        payload['profileImage'] = 'data:image/png;base64,${base64Encode(bytes)}';
+      }
+
+      if (_selectedRole == UserRole.admin) {
+        payload['companyName'] = _companyCtrl.text.trim();
+        payload['estYear'] = _estYearCtrl.text.trim();
+        payload['city'] = _cityCtrl.text.trim();
+        payload['state'] = _stateCtrl.text.trim();
+        payload['companyAddress'] = _companyAddressCtrl.text.trim();
+        payload['gstNumber'] = _gstCtrl.text.trim();
+        payload['panNumber'] = _panCtrl.text.trim();
+        payload['companyPhone'] = _companyPhoneCtrl.text.trim();
+        payload['companyEmail'] = _companyEmailCtrl.text.trim();
+        payload['website'] = _websiteCtrl.text.trim();
+
+        if (_companyLogo != null) {
+          final bytes = await _companyLogo!.readAsBytes();
+          payload['companyLogo'] = 'data:image/png;base64,${base64Encode(bytes)}';
+        }
+      }
+
+      final res = await api.post('/auth/signup', payload);
+      
+      ApiService.currentUserId = res['id'];
+      ApiService.currentCompanyId = res['companyId'];
+
+      await AuthService.saveRole(_selectedRole);
+
+      if (!mounted) return;
+      
+      UiUtils.showCustomSnackBar(
+        context: context, 
+        message: 'Profile completed successfully!', 
+        isError: false
+      );
+
+      Widget destination;
+      switch (_selectedRole) {
+        case UserRole.admin:
+          destination = const HomePage();
+          break;
+        case UserRole.client:
+          destination = const ClientHomePage();
+          break;
+        default:
+          destination = const HomePage();
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => destination),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to complete profile: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isButtonActive = (_currentStep == 0 && _isStep1Valid && _usernameError == null) ||
+        (_currentStep == 1 && _isStep2Valid);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
@@ -130,10 +318,10 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
           statusBarBrightness: Brightness.dark,
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
             child: Center(
-              child: const Text.rich(
+              child: Text.rich(
                 TextSpan(
                   text: 'Aatzy',
                   style: TextStyle(
@@ -165,129 +353,102 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 16),
-                      const Text(
-                        'Complete Your Profile',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _currentStep == 0 ? 'Personal Details' : 'Company Details',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          if (_selectedRole == UserRole.admin)
+                            Text(
+                              'Step ${_currentStep + 1} of 2',
+                              style: const TextStyle(
+                                color: Color(0xFF06B6D4),
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Tell us a bit about yourself to get started',
-                        style: TextStyle(
+                      Text(
+                        _currentStep == 0
+                            ? 'Tell us a bit about yourself to get started'
+                            : 'Provide your business information to set up your profile',
+                        style: const TextStyle(
                           color: Colors.white54,
                           fontSize: 14,
                         ),
                       ),
                       const SizedBox(height: 32),
 
-                      // ── Role Selector ──
-                      _buildRoleSelector(),
-                      const SizedBox(height: 28),
+                      if (_currentStep == 0) _buildStep1() else _buildStep2(),
 
-                      // ── Form Fields ──
-                      _buildInputField('Full Name', _fullNameCtrl),
-                      const SizedBox(height: 16),
-                      _buildInputField('Email Address', _emailCtrl,
-                          keyboardType: TextInputType.emailAddress),
-                      const SizedBox(height: 16),
-                      _buildInputField('Username', _usernameCtrl),
-                      const SizedBox(height: 16),
-                      _buildInputField(
-                        _selectedRole == UserRole.client
-                            ? 'Company / Organisation Name'
-                            : 'Company Name',
-                        _companyCtrl,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildPhoneField(),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: _isOtpSent && _resendTimer > 0
-                            ? Text(
-                                'Resend OTP in 00:${_resendTimer.toString().padLeft(2, '0')}',
-                                style: const TextStyle(
-                                    color: Colors.white54, fontSize: 12),
-                              )
-                            : TextButton(
-                                onPressed: _startResendTimer,
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: const Size(0, 0),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Text(
-                                  _isOtpSent ? 'Resend OTP' : 'Get OTP',
-                                  style: const TextStyle(
-                                    color: Color(0xFF06B6D4),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                      ),
-                      if (_isOtpSent) ...[
-                        const SizedBox(height: 16),
-                        _buildInputField('OTP', _otpCtrl,
-                            keyboardType: TextInputType.number),
-                      ],
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
               ),
-              // ── Continue Button (pinned to bottom) ──
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _isFormValid ? _onContinue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _selectedRole == UserRole.admin
-                        ? const Color(0xFF06B6D4)
-                        : const Color(0xFF3B82F6),
-                    disabledBackgroundColor:
-                        const Color(0xFF06B6D4).withValues(alpha: 0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Continue as ${_selectedRole.label}',
-                    style: TextStyle(
-                      color: _isFormValid ? Colors.white : Colors.white54,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
+
+              // Bottom Actions
               const SizedBox(height: 16),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Already have an account?',
-                    style: TextStyle(color: Colors.white54, fontSize: 14),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                            builder: (_) => const LoginPage()),
-                      );
-                    },
-                    child: const Text(
-                      'Log in',
-                      style: TextStyle(
-                        color: Color(0xFF06B6D4),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                  if (_currentStep == 1) ...[
+                    Expanded(
+                      flex: 1,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            _currentStep = 0;
+                          });
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: Color(0xFF06B6D4)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Back',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF06B6D4),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                  ],
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: isButtonActive ? _onContinue : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF06B6D4),
+                        disabledBackgroundColor: const Color(0xFF1E293B),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: isButtonActive ? 4 : 0,
+                      ),
+                      child: Text(
+                        _currentStep == 0 && _selectedRole == UserRole.admin ? 'Next' : 'Complete Profile',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isButtonActive ? Colors.white : Colors.white38,
+                        ),
                       ),
                     ),
                   ),
@@ -300,55 +461,193 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
     );
   }
 
-  // ── Role Selector — Admin & Client only ──
-  Widget _buildRoleSelector() {
+  Widget _buildStep1() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'I AM REGISTERING AS',
-          style: TextStyle(
-            color: Colors.white54,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
+        // ── Profile Photo Picker ──
+        Center(
+          child: GestureDetector(
+            onTap: () => _pickImage(false),
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: const Color(0xFF1E293B),
+                  backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                  child: _profileImage == null
+                      ? const Icon(Icons.person, size: 50, color: Colors.white54)
+                      : null,
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF06B6D4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 12),
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildRoleCard(
-                role: UserRole.admin,
-                icon: Icons.manage_accounts_rounded,
-                title: 'Admin',
-                subtitle: 'Manage projects, workers & operations',
-                color: const Color(0xFF06B6D4),
+        const SizedBox(height: 32),
+
+        // ── Role Selector ──
+        _buildRoleSelector(),
+        const SizedBox(height: 28),
+
+        // ── Form Fields ──
+        _buildInputField('Full Name', _fullNameCtrl),
+        const SizedBox(height: 16),
+        _buildInputField('Email Address', _emailCtrl, keyboardType: TextInputType.emailAddress),
+        const SizedBox(height: 16),
+        _buildInputField('Username', _usernameCtrl),
+        if (_usernameError != null) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 8, left: 4),
+            child: Text(
+              _usernameError!,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+          if (_usernameSuggestions.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Wrap(
+                spacing: 8,
+                children: _usernameSuggestions.map((s) => ActionChip(
+                  label: Text(s, style: const TextStyle(fontSize: 12)),
+                  backgroundColor: const Color(0xFF1E293B),
+                  labelStyle: const TextStyle(color: Color(0xFF06B6D4)),
+                  onPressed: () {
+                    _usernameCtrl.text = s;
+                    _checkUsername();
+                  },
+                )).toList(),
               ),
-              const SizedBox(width: 12),
-              _buildRoleCard(
-                role: UserRole.client,
-                icon: Icons.person_rounded,
-                title: 'Client',
-                subtitle: 'Track your project progress',
-                color: const Color(0xFF3B82F6),
-              ),
-            ],
+            ),
+        ],
+        const SizedBox(height: 16),
+        _buildPhoneField(),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: _isOtpSent && _resendTimer > 0
+              ? Text(
+                  'Resend OTP in 00:${_resendTimer.toString().padLeft(2, '0')}',
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                )
+              : TextButton(
+                  onPressed: _startResendTimer,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('Send OTP', style: TextStyle(color: Color(0xFF06B6D4), fontSize: 12)),
+                ),
+        ),
+        if (_isOtpSent) ...[
+          const SizedBox(height: 16),
+          _buildInputField('Enter 6-digit OTP', _otpCtrl, keyboardType: TextInputType.number),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStep2() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Company Logo Picker ──
+        Center(
+          child: GestureDetector(
+            onTap: () => _pickImage(true),
+            child: Stack(
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(20),
+                    image: _companyLogo != null
+                        ? DecorationImage(image: FileImage(_companyLogo!), fit: BoxFit.cover)
+                        : null,
+                  ),
+                  child: _companyLogo == null
+                      ? const Icon(Icons.business, size: 40, color: Colors.white54)
+                      : null,
+                ),
+                Positioned(
+                  bottom: -5,
+                  right: -5,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF06B6D4),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF0F172A), width: 2),
+                    ),
+                    child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 10),
-        // Subtle hint about Worker
+        const SizedBox(height: 32),
+
+        // ── Form Fields ──
+        _buildInputField('Company / Organisation Name *', _companyCtrl),
+        const SizedBox(height: 16),
         Row(
           children: [
-            Icon(Icons.info_outline_rounded,
-                color: Colors.white24, size: 14),
-            const SizedBox(width: 6),
-            const Text(
-              'Worker accounts are created by Admin',
-              style: TextStyle(color: Colors.white24, fontSize: 12),
-            ),
+            Expanded(child: _buildInputField('Est. Year', _estYearCtrl, keyboardType: TextInputType.number)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildInputField('City', _cityCtrl)),
           ],
+        ),
+        const SizedBox(height: 16),
+        _buildInputField('State / Province', _stateCtrl),
+        const SizedBox(height: 16),
+        _buildInputField('Full Address *', _companyAddressCtrl),
+        const SizedBox(height: 16),
+        _buildInputField('GST Number', _gstCtrl),
+        const SizedBox(height: 16),
+        _buildInputField('PAN Number', _panCtrl),
+        const SizedBox(height: 16),
+        _buildInputField('Company Phone', _companyPhoneCtrl, keyboardType: TextInputType.phone),
+        const SizedBox(height: 16),
+        _buildInputField('Company Email', _companyEmailCtrl, keyboardType: TextInputType.emailAddress),
+        const SizedBox(height: 16),
+        _buildInputField('Website URL', _websiteCtrl, keyboardType: TextInputType.url),
+      ],
+    );
+  }
+
+  Widget _buildRoleSelector() {
+    return Row(
+      children: [
+        _buildRoleCard(
+          role: UserRole.admin,
+          title: 'Admin',
+          subtitle: 'I own/manage a company',
+          icon: Icons.business,
+          color: const Color(0xFF06B6D4),
+        ),
+        const SizedBox(width: 16),
+        _buildRoleCard(
+          role: UserRole.client,
+          title: 'Client',
+          subtitle: 'I am tracking my project',
+          icon: Icons.person_outline,
+          color: const Color(0xFF10B981),
         ),
       ],
     );
@@ -356,15 +655,20 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
 
   Widget _buildRoleCard({
     required UserRole role,
-    required IconData icon,
     required String title,
     required String subtitle,
+    required IconData icon,
     required Color color,
   }) {
     final isSelected = _selectedRole == role;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedRole = role),
+        onTap: () {
+          setState(() {
+            _selectedRole = role;
+            _validateForm();
+          });
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(12),
@@ -386,8 +690,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                   color: isSelected ? color.withValues(alpha: 0.2) : Colors.white10,
                   borderRadius: BorderRadius.circular(9),
                 ),
-                child: Icon(icon,
-                    color: isSelected ? color : Colors.white38, size: 18),
+                child: Icon(icon, color: isSelected ? color : Colors.white38, size: 18),
               ),
               const SizedBox(height: 8),
               Text(
@@ -401,14 +704,9 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
               const SizedBox(height: 3),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: Colors.white38,
-                  fontSize: 10,
-                  height: 1.4,
-                ),
+                style: const TextStyle(color: Colors.white38, fontSize: 10, height: 1.4),
               ),
               const SizedBox(height: 8),
-              // Selection indicator
               Row(
                 children: [
                   AnimatedContainer(
@@ -438,8 +736,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
     );
   }
 
-  Widget _buildInputField(String hint, TextEditingController controller,
-      {TextInputType? keyboardType}) {
+  Widget _buildInputField(String hint, TextEditingController controller, {TextInputType? keyboardType}) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B).withValues(alpha: 0.5),
@@ -454,8 +751,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.white24, fontSize: 16),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
@@ -474,17 +770,9 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: const [
-                Text(
-                  '+91',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text('+91', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                 SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down,
-                    color: Colors.white54, size: 16),
+                Icon(Icons.keyboard_arrow_down, color: Colors.white54, size: 16),
               ],
             ),
           ),
@@ -498,8 +786,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                 hintText: '000000000',
                 hintStyle: TextStyle(color: Colors.white24, fontSize: 16),
                 border: InputBorder.none,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               ),
             ),
           ),

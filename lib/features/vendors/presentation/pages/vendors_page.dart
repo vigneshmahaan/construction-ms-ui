@@ -23,7 +23,8 @@ class Vendor {
 }
 
 class VendorsPage extends StatefulWidget {
-  const VendorsPage({super.key});
+  final bool isReadOnly;
+  const VendorsPage({super.key, this.isReadOnly = false});
 
   @override
   State<VendorsPage> createState() => _VendorsPageState();
@@ -56,6 +57,18 @@ class _VendorsPageState extends State<VendorsPage> {
       type: 'Business',
     ),
   ];
+
+  String _searchQuery = '';
+  String _filterType = 'All'; // 'All', 'Business', 'Individual'
+
+  List<Vendor> get _filteredVendors {
+    return _vendors.where((vendor) {
+      final matchesSearch = vendor.name.toLowerCase().contains(_searchQuery.toLowerCase()) || 
+                            vendor.phone.contains(_searchQuery);
+      final matchesFilter = _filterType == 'All' || vendor.type == _filterType;
+      return matchesSearch && matchesFilter;
+    }).toList();
+  }
 
   void _showAddVendorSheet() {
     showModalBottomSheet(
@@ -114,51 +127,122 @@ class _VendorsPageState extends State<VendorsPage> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white54),
-            onPressed: _showAddVendorSheet,
-          ),
+          if (!widget.isReadOnly)
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.white54),
+              onPressed: _showAddVendorSheet,
+            ),
         ],
       ),
       drawer: const CustomDrawer(),
       body: Column(
         children: [
-          // Search Bar
+          if (widget.isReadOnly)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Read-Only Mode. You can view vendors but cannot edit or add them.',
+                      style: TextStyle(color: Colors.amber.shade900, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Search and Filter Row
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: const TextField(
-                style: TextStyle(color: Colors.black87),
-                decoration: InputDecoration(
-                  icon: Icon(Icons.search, color: Colors.black54),
-                  hintText: 'Search vendors...',
-                  hintStyle: TextStyle(color: Colors.black38),
-                  border: InputBorder.none,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: TextField(
+                      style: const TextStyle(color: Colors.black87),
+                      onChanged: (val) {
+                        setState(() {
+                          _searchQuery = val;
+                        });
+                      },
+                      decoration: const InputDecoration(
+                        icon: Icon(Icons.search, color: Colors.black54),
+                        hintText: 'Search vendors...',
+                        hintStyle: TextStyle(color: Colors.black38),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _filterType,
+                        isExpanded: true,
+                        icon: const Icon(Icons.filter_list, color: Colors.black54),
+                        items: ['All', 'Business', 'Individual'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value, style: const TextStyle(color: Colors.black87, fontSize: 14)),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _filterType = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           
           // Vendors List
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _vendors.length,
-              itemBuilder: (context, index) {
-                final vendor = _vendors[index];
-                return _buildVendorCard(vendor);
-              },
-            ),
+            child: _filteredVendors.isEmpty
+                ? const Center(
+                    child: Text('No vendors found.', style: TextStyle(color: Colors.black54)),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _filteredVendors.length,
+                    itemBuilder: (context, index) {
+                      final vendor = _filteredVendors[index];
+                      return _buildVendorCard(vendor);
+                    },
+                  ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: widget.isReadOnly ? null : FloatingActionButton(
         onPressed: _showAddVendorSheet,
         backgroundColor: const Color(0xFF06B6D4), // Cyan theme
         child: const Icon(Icons.add, color: Colors.white),

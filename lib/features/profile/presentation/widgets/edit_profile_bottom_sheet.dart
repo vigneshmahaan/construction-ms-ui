@@ -24,6 +24,7 @@ class _EditProfileBottomSheetState extends State<EditProfileBottomSheet> {
   late TextEditingController _emailController;
   late TextEditingController _usernameController;
   late TextEditingController _phoneController;
+  bool _isFormValid = true; // Initially true because text fields start filled
 
   @override
   void initState() {
@@ -32,6 +33,22 @@ class _EditProfileBottomSheetState extends State<EditProfileBottomSheet> {
     _emailController = TextEditingController(text: widget.initialEmail);
     _usernameController = TextEditingController(text: widget.initialUsername);
     _phoneController = TextEditingController(text: widget.initialPhone);
+    
+    _nameController.addListener(_validateForm);
+    _emailController.addListener(_validateForm);
+    _usernameController.addListener(_validateForm);
+    _phoneController.addListener(_validateForm);
+  }
+
+  void _validateForm() {
+    final isValid = _nameController.text.trim().isNotEmpty &&
+        _emailController.text.trim().isNotEmpty &&
+        _usernameController.text.trim().isNotEmpty &&
+        _phoneController.text.trim().isNotEmpty;
+        
+    if (isValid != _isFormValid) {
+      setState(() => _isFormValid = isValid);
+    }
   }
 
   @override
@@ -106,36 +123,38 @@ class _EditProfileBottomSheetState extends State<EditProfileBottomSheet> {
                   _buildTextField('FULL NAME', _nameController),
                   _buildTextField('EMAIL', _emailController),
                   _buildTextField('USERNAME', _usernameController),
-                  _buildTextField('PHONE', _phoneController),
+                  _buildTextField('PHONE', _phoneController, readOnly: true),
                   const SizedBox(height: 16),
                 ],
               ),
             ),
           ),
 
-          // Save Button
           Padding(
             padding: const EdgeInsets.only(top: 16),
             child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, {
-                  'name': _nameController.text.trim(),
-                  'email': _emailController.text.trim(),
-                  'username': _usernameController.text.trim(),
-                  'phone': _phoneController.text.trim(),
-                });
-              },
+              onPressed: _isFormValid 
+                ? () {
+                    Navigator.pop(context, {
+                      'name': _nameController.text.trim(),
+                      'email': _emailController.text.trim(),
+                      'username': _usernameController.text.trim(),
+                      'phone': _phoneController.text.trim(),
+                    });
+                  }
+                : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF06B6D4), // Electric cyan
+                disabledBackgroundColor: const Color(0xFF06B6D4).withValues(alpha: 0.3),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Save Changes',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: _isFormValid ? Colors.white : Colors.white54,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -147,7 +166,7 @@ class _EditProfileBottomSheetState extends State<EditProfileBottomSheet> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  Widget _buildTextField(String label, TextEditingController controller, {bool readOnly = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -165,13 +184,14 @@ class _EditProfileBottomSheetState extends State<EditProfileBottomSheet> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.background.withValues(alpha: 0.5),
+              color: readOnly ? Colors.white10 : AppColors.background.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.white10),
             ),
             child: TextField(
               controller: controller,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              readOnly: readOnly,
+              style: TextStyle(color: readOnly ? Colors.white54 : Colors.white, fontSize: 14),
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),

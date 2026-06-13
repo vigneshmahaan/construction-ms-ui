@@ -26,9 +26,14 @@ class Worker {
     this.state = '',
     this.city = '',
     this.permissions = const {
-      'canUpdateTasks': true,
-      'canUploadPhotos': true,
-      'canRequestMaterials': true,
+      'warehouse': false,
+      'material_indent': false,
+      'purchase_orders': false,
+      'stocks_hub': false,
+      'logistics': false,
+      'vehicles': false,
+      'vendors': false,
+      'centralized_attendance': false,
     },
     this.assignedProjectIds = const [],
   });

@@ -7,8 +7,9 @@ import 'package:intl/intl.dart';
 
 class MaterialIndentPage extends StatefulWidget {
   final bool openNewIndentOnInit;
+  final bool isReadOnly;
 
-  const MaterialIndentPage({super.key, this.openNewIndentOnInit = false});
+  const MaterialIndentPage({super.key, this.openNewIndentOnInit = false, this.isReadOnly = false});
 
   @override
   State<MaterialIndentPage> createState() => _MaterialIndentPageState();
@@ -89,14 +90,37 @@ class _MaterialIndentPageState extends State<MaterialIndentPage> {
           style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white54),
-            onPressed: _showNewIndentSheet,
-          ),
+          if (!widget.isReadOnly)
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.white54),
+              onPressed: _showNewIndentSheet,
+            ),
         ],
       ),
       body: Column(
         children: [
+          if (widget.isReadOnly)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Read-Only Mode. You can view indents but cannot edit or add them.',
+                      style: TextStyle(color: Colors.amber.shade900, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Container(
             padding: const EdgeInsets.all(16),
             color: Colors.white,
@@ -132,7 +156,7 @@ class _MaterialIndentPageState extends State<MaterialIndentPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: widget.isReadOnly ? null : FloatingActionButton(
         onPressed: _showNewIndentSheet,
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../app_settings/presentation/pages/app_settings_page.dart';
 import '../../../company_info/presentation/pages/company_info_page.dart';
 import '../widgets/edit_profile_bottom_sheet.dart';
+import 'package:construction_ms_ui/core/network/api_service.dart';
+import 'package:construction_ms_ui/shared/utils/ui_utils.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,10 +13,46 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String _fullName = 'Vigneshwaran';
-  String _email = 'rockyvignesh312@gmail.com';
-  String _username = 'vigclaw';
-  String _phone = '7010396731';
+  String _fullName = '';
+  String _email = '';
+  String _username = '';
+  String _phone = '';
+  String _companyName = '';
+  String _role = '';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final userId = ApiService.currentUserId;
+      if (userId == null) return;
+      
+      final api = ApiService();
+      final user = await api.get('/users/$userId');
+      
+      setState(() {
+        _fullName = user['fullName'] ?? 'N/A';
+        _email = user['email'] ?? 'N/A';
+        _username = user['username'] ?? 'N/A';
+        _phone = user['phone'] ?? 'N/A';
+        _role = user['role'] ?? 'WORKER';
+        
+        if (user['company'] != null) {
+          _companyName = user['company']['name'] ?? 'N/A';
+        }
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   void _showEditProfileSheet(BuildContext context) async {
     final result = await showModalBottomSheet<Map<String, String>>(
@@ -35,11 +73,41 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (result != null) {
+      final name = result['name'] ?? _fullName;
+      final email = result['email'] ?? _email;
+      final username = result['username'] ?? _username;
+      
+      try {
+        final userId = ApiService.currentUserId;
+        if (userId != null) {
+          final api = ApiService();
+          await api.put('/users/$userId', {
+            'fullName': name,
+            'email': email,
+            'username': username,
+          });
+          
+          if (mounted) {
+            UiUtils.showCustomSnackBar(
+              context: context,
+              message: 'Profile updated successfully!',
+              isError: false,
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          UiUtils.showCustomSnackBar(
+            context: context,
+            message: 'Failed to update profile.',
+          );
+        }
+      }
+
       setState(() {
-        _fullName = result['name'] ?? _fullName;
-        _email = result['email'] ?? _email;
-        _username = result['username'] ?? _username;
-        _phone = result['phone'] ?? _phone;
+        _fullName = name;
+        _email = email;
+        _username = username;
       });
     }
   }
@@ -49,25 +117,29 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: _buildAppBar(context),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 24),
-            _buildProfileHeader(),
-            const SizedBox(height: 32),
-            _buildSectionTitle('PERSONAL INFO'),
-            _buildPersonalInfoSection(),
-            const SizedBox(height: 32),
-            _buildSectionTitle('SECURITY'),
-            _buildSecuritySection(),
-            const SizedBox(height: 32),
-            _buildSectionTitle('LINKED TO'),
-            _buildLinkedToSection(context),
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator()) 
+        : SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+                _buildProfileHeader(),
+                const SizedBox(height: 32),
+                _buildSectionTitle('PERSONAL INFO'),
+                _buildPersonalInfoSection(),
+                const SizedBox(height: 32),
+                _buildSectionTitle('SECURITY'),
+                _buildSecuritySection(),
+                if (_role == 'ADMIN') ...[
+                  const SizedBox(height: 32),
+                  _buildSectionTitle('LINKED TO'),
+                  _buildLinkedToSection(context),
+                ],
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
     );
   }
 
@@ -122,10 +194,10 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Color(0xFF3B82F6),
               shape: BoxShape.circle,
             ),
-            child: const Center(
+            child: Center(
               child: Text(
-                'VI',
-                style: TextStyle(
+                _fullName.length >= 2 ? _fullName.substring(0, 2).toUpperCase() : (_fullName.isNotEmpty ? _fullName.toUpperCase() : 'US'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -160,9 +232,9 @@ class _ProfilePageState extends State<ProfilePage> {
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: const Color(0xFFFDE68A)),
             ),
-            child: const Text(
-              'Admin',
-              style: TextStyle(
+            child: Text(
+              _role == 'ADMIN' ? 'Admin' : (_role == 'CLIENT' ? 'Client' : 'Worker'),
+              style: const TextStyle(
                 color: Color(0xFFD97706),
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -212,8 +284,10 @@ class _ProfilePageState extends State<ProfilePage> {
           _buildInfoItem('USERNAME', _username),
           _buildDivider(),
           _buildInfoItem('PHONE', _phone),
-          _buildDivider(),
-          _buildInfoItem('COMPANY', 'innoaivators', isLast: true),
+          if (_companyName.isNotEmpty) ...[
+            _buildDivider(),
+            _buildInfoItem('COMPANY', _companyName, isLast: true),
+          ],
         ],
       ),
     );

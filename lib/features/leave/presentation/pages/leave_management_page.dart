@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:construction_ms_ui/core/theme/app_colors.dart';
+import 'package:construction_ms_ui/core/network/api_service.dart';
 
 class LeaveRequest {
   final String id;
@@ -33,60 +34,81 @@ class LeaveManagementPage extends StatefulWidget {
 }
 
 class _LeaveManagementPageState extends State<LeaveManagementPage> {
-  final List<LeaveRequest> _leaves = [
-    LeaveRequest(
-      id: '1',
-      initials: 'RK',
-      avatarColor: const Color(0xFF06B6D4), // Cyan theme
-      name: 'Raj Kumar',
-      role: 'Supervisor',
-      type: 'Sick Leave',
-      dateRange: 'Jun 5, 2025 - Jun 7, 2025 (3 days)',
-      reason: '"Not feeling well, fever."',
-      status: 'pending',
-    ),
-    LeaveRequest(
-      id: '2',
-      initials: 'MK',
-      avatarColor: const Color(0xFF8B5CF6), // Purple
-      name: 'Muthu Kumar',
-      role: 'Labour',
-      type: 'Annual Leave',
-      dateRange: 'Jun 14, 2025 - Jun 15, 2025 (2 days)',
-      reason: '"Family function at hometown."',
-      status: 'pending',
-    ),
-    LeaveRequest(
-      id: '3',
-      initials: 'PS',
-      avatarColor: const Color(0xFF10B981), // Green
-      name: 'Priya Suresh',
-      role: 'Site Engineer',
-      type: 'Casual Leave',
-      dateRange: 'Jun 10, 2025 - Jun 11, 2025 (2 days)',
-      reason: '"Personal work."',
-      status: 'approved',
-    ),
-    LeaveRequest(
-      id: '4',
-      initials: 'AV',
-      avatarColor: const Color(0xFFEF4444), // Red
-      name: 'Anand Vel',
-      role: 'Labour',
-      type: 'Emergency Leave',
-      dateRange: 'Jun 1, 2025 (1 day)',
-      reason: '"Family emergency."',
-      status: 'rejected',
-    ),
-  ];
+  List<LeaveRequest> _leaves = [];
+  bool _isLoading = true;
 
-  void _updateLeaveStatus(String id, String newStatus) {
-    setState(() {
-      final index = _leaves.indexWhere((l) => l.id == id);
-      if (index != -1) {
-        _leaves[index].status = newStatus;
+  @override
+  void initState() {
+    super.initState();
+    _fetchLeaves();
+  }
+
+  Future<void> _fetchLeaves() async {
+    try {
+      final api = ApiService();
+      final List<dynamic> data = await api.get('/leave-requests');
+      
+      if (mounted) {
+        setState(() {
+          _leaves = data.map((json) {
+            final user = json['user'] ?? {};
+            final name = user['fullName'] ?? 'Unknown Worker';
+            final role = user['role'] ?? 'Worker';
+            final initials = name.isNotEmpty ? name.substring(0, 2).toUpperCase() : 'WK';
+            
+            // Format dates
+            final start = DateTime.parse(json['startDate']);
+            final end = DateTime.parse(json['endDate']);
+            final days = end.difference(start).inDays + 1;
+            final dateRange = '${start.day}/${start.month}/${start.year} - ${end.day}/${end.month}/${end.year} ($days days)';
+
+            return LeaveRequest(
+              id: json['id'],
+              initials: initials,
+              avatarColor: const Color(0xFF06B6D4), // Default color
+              name: name,
+              role: role,
+              type: 'Leave Request',
+              dateRange: dateRange,
+              reason: json['reason'] ?? '',
+              status: (json['status'] as String).toLowerCase(),
+            );
+          }).toList();
+          _isLoading = false;
+        });
       }
-    });
+    } catch (e) {
+      debugPrint('Error fetching leaves: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateLeaveStatus(String id, String newStatus) async {
+    try {
+      final api = ApiService();
+      await api.patch('/leave-requests/$id/status', {
+        'status': newStatus.toUpperCase(),
+      });
+      
+      setState(() {
+        final index = _leaves.indexWhere((l) => l.id == id);
+        if (index != -1) {
+          _leaves[index].status = newStatus;
+        }
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Leave status updated successfully!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update status: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
@@ -133,13 +155,15 @@ class _LeaveManagementPageState extends State<LeaveManagementPage> {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildLeaveList('pending'),
-            _buildLeaveList('approved'),
-            _buildLeaveList('rejected'),
-          ],
-        ),
+        body: _isLoading 
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                children: [
+                  _buildLeaveList('pending'),
+                  _buildLeaveList('approved'),
+                  _buildLeaveList('rejected'),
+                ],
+              ),
       ),
     );
   }

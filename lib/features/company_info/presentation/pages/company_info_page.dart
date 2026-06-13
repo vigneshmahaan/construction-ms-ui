@@ -5,6 +5,8 @@ import 'package:construction_ms_ui/core/theme/app_colors.dart';
 import '../widgets/edit_company_bottom_sheet.dart';
 import '../../../vendors/presentation/pages/vendors_page.dart';
 import '../../../expenses/presentation/pages/expenses_page.dart';
+import 'package:construction_ms_ui/core/network/api_service.dart';
+import 'package:construction_ms_ui/shared/utils/ui_utils.dart';
 
 class CompanyInfoPage extends StatefulWidget {
   const CompanyInfoPage({super.key});
@@ -16,6 +18,55 @@ class CompanyInfoPage extends StatefulWidget {
 class _CompanyInfoPageState extends State<CompanyInfoPage> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  
+  bool _isLoading = true;
+  String _companyName = '';
+  String _estYear = '';
+  String _city = '';
+  String _state = '';
+  String _address = '';
+  String _gstNumber = '';
+  String _panNumber = '';
+  String _phone = '';
+  String _email = '';
+  String _website = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCompanyInfo();
+  }
+
+  Future<void> _fetchCompanyInfo() async {
+    try {
+      final userId = ApiService.currentUserId;
+      if (userId == null) return;
+      
+      final api = ApiService();
+      final user = await api.get('/users/$userId');
+      
+      if (user['company'] != null) {
+        final comp = user['company'];
+        setState(() {
+          _companyName = comp['name'] ?? 'N/A';
+          _estYear = comp['estYear'] ?? '';
+          _city = comp['city'] ?? '';
+          _state = comp['state'] ?? '';
+          _address = comp['address'] ?? 'N/A';
+          _gstNumber = comp['gstNumber'] ?? 'N/A';
+          _panNumber = comp['panNumber'] ?? 'N/A';
+          _phone = comp['phone'] ?? 'N/A';
+          _email = comp['email'] ?? 'N/A';
+          _website = comp['website'] ?? 'N/A';
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -34,8 +85,8 @@ class _CompanyInfoPageState extends State<CompanyInfoPage> {
     }
   }
 
-  void _showEditSheet(BuildContext context) {
-    showModalBottomSheet(
+  void _showEditSheet(BuildContext context) async {
+    final result = await showModalBottomSheet<Map<String, String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -43,9 +94,60 @@ class _CompanyInfoPageState extends State<CompanyInfoPage> {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: const EditCompanyBottomSheet(),
+        child: EditCompanyBottomSheet(
+          initialName: _companyName,
+          initialAddress: _address,
+          initialGst: _gstNumber,
+          initialPan: _panNumber,
+          initialPhone: _phone,
+          initialEmail: _email,
+          initialWebsite: _website,
+        ),
       ),
     );
+
+    if (result != null) {
+      final companyId = ApiService.currentCompanyId;
+      if (companyId != null) {
+        try {
+          final api = ApiService();
+          await api.put('/companies/$companyId', {
+            'name': result['name'],
+            'address': result['address'],
+            'gstNumber': result['gstNumber'],
+            'panNumber': result['panNumber'],
+            'phone': result['phone'],
+            'email': result['email'],
+            'website': result['website'],
+          });
+
+          if (mounted) {
+            UiUtils.showCustomSnackBar(
+              context: context,
+              message: 'Company details updated successfully!',
+              isError: false,
+            );
+          }
+
+          setState(() {
+            _companyName = result['name'] ?? _companyName;
+            _address = result['address'] ?? _address;
+            _gstNumber = result['gstNumber'] ?? _gstNumber;
+            _panNumber = result['panNumber'] ?? _panNumber;
+            _phone = result['phone'] ?? _phone;
+            _email = result['email'] ?? _email;
+            _website = result['website'] ?? _website;
+          });
+        } catch (e) {
+          if (mounted) {
+            UiUtils.showCustomSnackBar(
+              context: context,
+              message: 'Failed to update company details.',
+            );
+          }
+        }
+      }
+    }
   }
 
   void _showImagePickerOptions(BuildContext context) {
@@ -160,7 +262,9 @@ class _CompanyInfoPageState extends State<CompanyInfoPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -215,10 +319,10 @@ class _CompanyInfoPageState extends State<CompanyInfoPage> {
               ),
             ),
             const SizedBox(height: 16),
-            const Center(
+            Center(
               child: Text(
-                'RK Constructions Pvt Ltd',
-                style: TextStyle(
+                _companyName,
+                style: const TextStyle(
                   color: Color(0xFF0F172A),
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -226,10 +330,10 @@ class _CompanyInfoPageState extends State<CompanyInfoPage> {
               ),
             ),
             const SizedBox(height: 4),
-            const Center(
+            Center(
               child: Text(
-                'Est. 2015 · Chennai, TN',
-                style: TextStyle(
+                'Est. $_estYear · $_city, $_state',
+                style: const TextStyle(
                   color: Color(0xFF64748B),
                   fontSize: 14,
                 ),
@@ -252,17 +356,17 @@ class _CompanyInfoPageState extends State<CompanyInfoPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _buildInfoItem('ADDRESS', '14, Industrial Estate, Chennai – 600058, Tamil Nadu'),
+                  _buildInfoItem('ADDRESS', _address),
                   _buildDivider(),
-                  _buildInfoItem('GST NUMBER', '33AABCC1234D1Z5'),
+                  _buildInfoItem('GST NUMBER', _gstNumber),
                   _buildDivider(),
-                  _buildInfoItem('PAN NUMBER', 'AABCC1234D'),
+                  _buildInfoItem('PAN NUMBER', _panNumber),
                   _buildDivider(),
-                  _buildInfoItem('PHONE', '+91 44 2345 6789'),
+                  _buildInfoItem('PHONE', _phone),
                   _buildDivider(),
-                  _buildInfoItem('EMAIL', 'info@rkconstructions.com'),
+                  _buildInfoItem('EMAIL', _email),
                   _buildDivider(),
-                  _buildInfoItem('WEBSITE', 'www.rkconstructions.com', valueColor: const Color(0xFF06B6D4)),
+                  _buildInfoItem('WEBSITE', _website, valueColor: const Color(0xFF06B6D4)),
                   const SizedBox(height: 32),
 
                   const Text(

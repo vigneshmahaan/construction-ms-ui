@@ -6,26 +6,44 @@ import 'package:construction_ms_ui/core/theme/app_colors.dart';
 import 'package:construction_ms_ui/features/projects/presentation/widgets/custom_form_field.dart';
 
 class StepOneProjectDetails extends StatefulWidget {
-  const StepOneProjectDetails({super.key});
+  final TextEditingController nameController;
+  final TextEditingController addressController;
+  final TextEditingController numFloorsController;
+  final TextEditingController startDateController;
+  final TextEditingController endDateController;
+  final String? projectType;
+  final String? houseType;
+  final Function(String?) onProjectTypeChanged;
+  final Function(String?) onHouseTypeChanged;
+  final List<XFile> selectedImages;
+  final Function(List<XFile>) onImagesSelected;
+  final Function(int) onImageRemoved;
+
+  const StepOneProjectDetails({
+    super.key, 
+    required this.nameController, 
+    required this.addressController,
+    required this.numFloorsController,
+    required this.startDateController,
+    required this.endDateController,
+    required this.projectType,
+    required this.houseType,
+    required this.onProjectTypeChanged,
+    required this.onHouseTypeChanged,
+    required this.selectedImages,
+    required this.onImagesSelected,
+    required this.onImageRemoved,
+  });
 
   @override
   State<StepOneProjectDetails> createState() => _StepOneProjectDetailsState();
 }
 
 class _StepOneProjectDetailsState extends State<StepOneProjectDetails> {
-  String? _projectType = 'Commercial';
-  String? _houseType = 'Simplex';
-  
-  final TextEditingController _startDateController = TextEditingController();
-  final TextEditingController _endDateController = TextEditingController();
-  
   final ImagePicker _picker = ImagePicker();
-  final List<XFile> _selectedImages = [];
 
   @override
   void dispose() {
-    _startDateController.dispose();
-    _endDateController.dispose();
     super.dispose();
   }
 
@@ -71,16 +89,12 @@ class _StepOneProjectDetailsState extends State<StepOneProjectDetails> {
       if (source == ImageSource.gallery) {
         final List<XFile> pickedFiles = await _picker.pickMultiImage();
         if (pickedFiles.isNotEmpty) {
-          setState(() {
-            _selectedImages.addAll(pickedFiles);
-          });
+          widget.onImagesSelected(pickedFiles);
         }
       } else {
         final XFile? pickedFile = await _picker.pickImage(source: source);
         if (pickedFile != null) {
-          setState(() {
-            _selectedImages.add(pickedFile);
-          });
+          widget.onImagesSelected([pickedFile]);
         }
       }
     } catch (e) {
@@ -89,9 +103,7 @@ class _StepOneProjectDetailsState extends State<StepOneProjectDetails> {
   }
 
   void _removeImage(int index) {
-    setState(() {
-      _selectedImages.removeAt(index);
-    });
+    widget.onImageRemoved(index);
   }
 
   @override
@@ -110,35 +122,37 @@ class _StepOneProjectDetailsState extends State<StepOneProjectDetails> {
             ),
           ),
           const SizedBox(height: 24),
-          const CustomFormField(
+          CustomFormField(
             label: 'Project Name',
             isRequired: true,
             hint: 'e.g. Sunrise Villa Phase 3',
+            controller: widget.nameController,
           ),
           CustomFormField(
             label: 'Project Type',
             isRequired: true,
             hint: 'Select Project Type',
             isDropdown: true,
-            dropdownValue: _projectType,
+            dropdownValue: widget.projectType,
             dropdownItems: const ['Commercial', 'Residential', 'Interiors', 'Design'],
-            onDropdownChanged: (val) => setState(() => _projectType = val),
+            onDropdownChanged: widget.onProjectTypeChanged,
           ),
           CustomFormField(
             label: 'House Type',
             isRequired: true,
             hint: 'Select House Type',
             isDropdown: true,
-            dropdownValue: _houseType,
+            dropdownValue: widget.houseType,
             dropdownItems: const ['Simplex', 'Duplex', 'Triplex', 'Others'],
-            onDropdownChanged: (val) => setState(() => _houseType = val),
+            onDropdownChanged: widget.onHouseTypeChanged,
           ),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: CustomFormField(
                   label: 'No. of Floors',
                   hint: 'e.g. 5',
+                  controller: widget.numFloorsController,
                 ),
               ),
               const SizedBox(width: 16),
@@ -147,9 +161,9 @@ class _StepOneProjectDetailsState extends State<StepOneProjectDetails> {
                   label: 'Start Date',
                   isRequired: true,
                   hint: 'dd-mm-yyyy',
-                  controller: _startDateController,
+                  controller: widget.startDateController,
                   readOnly: true,
-                  onTap: () => _selectDate(context, _startDateController),
+                  onTap: () => _selectDate(context, widget.startDateController),
                   suffixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: Colors.black87),
                 ),
               ),
@@ -159,15 +173,16 @@ class _StepOneProjectDetailsState extends State<StepOneProjectDetails> {
             label: 'End Date',
             isRequired: true,
             hint: 'dd-mm-yyyy',
-            controller: _endDateController,
+            controller: widget.endDateController,
             readOnly: true,
-            onTap: () => _selectDate(context, _endDateController),
+            onTap: () => _selectDate(context, widget.endDateController),
             suffixIcon: const Icon(Icons.calendar_today_outlined, size: 18, color: Colors.black87),
           ),
-          const CustomFormField(
+          CustomFormField(
             label: 'Project Address',
             isRequired: true,
             hint: 'Full site address',
+            controller: widget.addressController,
           ),
           Row(
             children: const [
@@ -199,19 +214,19 @@ class _StepOneProjectDetailsState extends State<StepOneProjectDetails> {
               ),
             ),
           ),
-          if (_selectedImages.isNotEmpty)
+          if (widget.selectedImages.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Wrap(
                 spacing: 12,
                 runSpacing: 12,
-                children: List.generate(_selectedImages.length, (index) {
+                children: List.generate(widget.selectedImages.length, (index) {
                   return Stack(
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.file(
-                          File(_selectedImages[index].path),
+                          File(widget.selectedImages[index].path),
                           width: 80,
                           height: 80,
                           fit: BoxFit.cover,

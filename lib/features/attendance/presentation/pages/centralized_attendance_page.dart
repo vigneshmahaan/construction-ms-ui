@@ -5,7 +5,8 @@ import 'package:construction_ms_ui/core/theme/app_colors.dart';
 import 'package:intl/intl.dart';
 
 class CentralizedAttendancePage extends StatefulWidget {
-  const CentralizedAttendancePage({super.key});
+  final bool isReadOnly;
+  const CentralizedAttendancePage({super.key, this.isReadOnly = false});
 
   @override
   State<CentralizedAttendancePage> createState() => _CentralizedAttendancePageState();
@@ -175,6 +176,28 @@ class _CentralizedAttendancePageState extends State<CentralizedAttendancePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (widget.isReadOnly)
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.amber.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Read-Only Mode. You can view attendance but cannot submit or edit it.',
+                        style: TextStyle(color: Colors.amber.shade900, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             // Filters
             Row(
               children: [
@@ -364,9 +387,10 @@ class _CentralizedAttendancePageState extends State<CentralizedAttendancePage> {
               ),
             ),
             const SizedBox(height: 12),
-            GestureDetector(
-              onTap: _showImagePickerModal,
-              child: Container(
+            if (!widget.isReadOnly)
+              GestureDetector(
+                onTap: _showImagePickerModal,
+                child: Container(
                 height: 150,
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -409,24 +433,25 @@ class _CentralizedAttendancePageState extends State<CentralizedAttendancePage> {
             const SizedBox(height: 32),
 
             // Submit Button
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF06B6D4), // Primary Cyan theme
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            if (!widget.isReadOnly)
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF06B6D4), // Primary Cyan theme
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Submit Attendance',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              child: const Text(
-                'Submit Attendance',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -494,6 +519,7 @@ class _CentralizedAttendancePageState extends State<CentralizedAttendancePage> {
             ),
           ),
           child: TextField(
+            readOnly: widget.isReadOnly,
             controller: controller,
             keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
             style: const TextStyle(

@@ -3,20 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart';
 
+import 'package:construction_ms_ui/core/network/api_service.dart';
+
 class ProjectDetailsPage extends StatefulWidget {
-  final String title;
-  final String type;
-  final String subtitle;
-  final double progress;
-  final String dateRange;
+  final String projectId;
 
   const ProjectDetailsPage({
     super.key,
-    required this.title,
-    required this.type,
-    required this.subtitle,
-    required this.progress,
-    required this.dateRange,
+    required this.projectId,
   });
 
   @override
@@ -25,84 +19,33 @@ class ProjectDetailsPage extends StatefulWidget {
 
 class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ApiService _apiService = ApiService();
+  bool _isLoading = true;
+  Map<String, dynamic>? _project;
 
   // State variables for edit
-  late String _projectTitle;
-  late String _projectType;
-  late String _projectLocation;
-  late String _projectStatus;
-  late String _totalBudget;
-  late String _progressPercentage;
-  late String _startDate;
-  late String _endDate;
-  late String _clientName;
-  late String _clientPhone;
-  late String _clientAddress;
+  String _projectTitle = '';
+  String _projectType = 'Residential';
+  String _projectLocation = '';
+  String _projectStatus = 'Active';
+  String _totalBudget = '';
+  String _progressPercentage = '0';
+  String _startDate = '';
+  String _endDate = '';
+  String _clientName = '';
+  String _clientPhone = '';
+  String _clientAddress = '';
 
-  DateTime _overviewDailyDate = DateTime(2026, 6, 11);
-  DateTime _paymentDailyDate = DateTime(2025, 6, 4);
-  DateTime _taskDate = DateTime(2025, 6, 4);
+  DateTime _overviewDailyDate = DateTime.now();
+  DateTime _paymentDailyDate = DateTime.now();
+  DateTime _taskDate = DateTime.now();
 
-  List<Map<String, dynamic>> _uploadedFiles = [
-    {
-      'name': 'Floor_Plan_B2.pdf',
-      'size': '2.4 MB',
-      'date': 'Jun 1, 2025',
-      'type': 'pdf'
-    },
-    {
-      'name': 'Site_Photo_May30.jpg',
-      'size': '1.8 MB',
-      'date': 'May 30, 2025',
-      'type': 'jpg'
-    },
-    {
-      'name': 'Contract_Agreement.docx',
-      'size': '560 KB',
-      'date': 'Jan 5, 2025',
-      'type': 'docx'
-    }
-  ];
+  List<dynamic> _expenses = [];
 
-  final Map<String, List<Map<String, dynamic>>> _mockOverviewExpenses = {
-    '11-06-2026': [
-      {'icon': Icons.people_outline, 'iconColor': Colors.blue, 'iconBg': Colors.blue.shade50, 'title': 'Salaries & Wages', 'subtitle': 'Paid to 15 Labours & 2 Engineers\nDirect Cash & UPI', 'amount': '₹14,500'},
-      {'icon': Icons.layers_outlined, 'iconColor': Colors.orange, 'iconBg': Colors.orange.shade50, 'title': 'Vendor Payments', 'subtitle': 'Ramco Cements (200 Bags)\nBank Transfer', 'amount': '₹68,000'},
-      {'icon': Icons.local_shipping_outlined, 'iconColor': Colors.purple, 'iconBg': Colors.purple.shade50, 'title': 'Transport', 'subtitle': 'Material unload & Truck hire\nCash', 'amount': '₹4,500'},
-      {'icon': Icons.coffee_outlined, 'iconColor': Colors.teal, 'iconBg': Colors.teal.shade50, 'title': 'Tea & Snacks', 'subtitle': 'Evening refreshments\nPetty Cash', 'amount': '₹450'},
-    ],
-    '12-06-2026': [
-      {'icon': Icons.people_outline, 'iconColor': Colors.blue, 'iconBg': Colors.blue.shade50, 'title': 'Salaries & Wages', 'subtitle': 'Paid to 12 Labours\nDirect Cash', 'amount': '₹9,600'},
-      {'icon': Icons.coffee_outlined, 'iconColor': Colors.teal, 'iconBg': Colors.teal.shade50, 'title': 'Tea & Snacks', 'subtitle': 'Evening refreshments\nPetty Cash', 'amount': '₹300'},
-    ]
-  };
+  List<Map<String, dynamic>> _uploadedFiles = [];
 
-  final Map<String, Map<String, dynamic>> _mockPaymentExpenses = {
-    '04-06-2025': {
-      'total': '₹ 11,450',
-      'workers': '15',
-      'salary': '₹10,800',
-      'tea': '₹450',
-      'other': '₹200',
-      'breakdown': [
-        {'title': 'Full-Day Wages (12 Workers)', 'subtitle': '₹800 / head', 'amount': '₹9,600'},
-        {'title': 'Half-Day Wages (3 Workers)', 'subtitle': '₹400 / head', 'amount': '₹1,200'},
-        {'title': 'Tea & Snacks', 'subtitle': 'Daily refreshment cost', 'amount': '₹450'},
-        {'title': 'Other Expenses', 'subtitle': 'Transport, Materials', 'amount': '₹200'},
-      ]
-    },
-    '05-06-2025': {
-      'total': '₹ 8,300',
-      'workers': '10',
-      'salary': '₹8,000',
-      'tea': '₹300',
-      'other': '₹0',
-      'breakdown': [
-        {'title': 'Full-Day Wages (10 Workers)', 'subtitle': '₹800 / head', 'amount': '₹8,000'},
-        {'title': 'Tea & Snacks', 'subtitle': 'Daily refreshment cost', 'amount': '₹300'},
-      ]
-    }
-  };
+  // Mock Payment Expenses removed
+
 
   String _formatDate(DateTime date) {
     return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
@@ -191,6 +134,11 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
           'type': ext,
         });
       });
+      try {
+        await _apiService.patch('/projects/${widget.projectId}', {'agreements': _uploadedFiles});
+      } catch (e) {
+        print('Error saving file data: $e');
+      }
     }
   }
 
@@ -198,19 +146,45 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    
-    // Initialize mock data based on widget props
-    _projectTitle = widget.title;
-    _projectType = widget.type == 'COMMERCIAL' ? 'Commercial' : 'Residential';
-    _projectLocation = widget.subtitle;
-    _projectStatus = 'Active';
-    _totalBudget = '24000000';
-    _progressPercentage = (widget.progress * 100).toInt().toString();
-    _startDate = '01-01-2025';
-    _endDate = '31-12-2025';
-    _clientName = '';
-    _clientPhone = '';
-    _clientAddress = '';
+    _fetchProjectDetails();
+  }
+
+  Future<void> _fetchProjectDetails() async {
+    try {
+      final response = await _apiService.get('/projects/${widget.projectId}');
+      if (response != null) {
+        setState(() {
+          _project = response;
+          _projectTitle = _project?['name'] ?? '';
+          _projectType = _project?['projectType'] ?? 'Commercial';
+          _projectLocation = _project?['address'] ?? '';
+          _totalBudget = _project?['totalBudget']?.toString() ?? '0';
+          _startDate = _project?['startDate']?.toString() ?? '';
+          _endDate = _project?['endDate']?.toString() ?? '';
+          
+          if (_project?['client'] != null) {
+            _clientName = _project?['client']['fullName'] ?? '';
+            _clientPhone = _project?['client']['phone'] ?? '';
+          }
+          
+          if (_project?['expenses'] != null) {
+            _expenses = _project?['expenses'];
+          }
+          if (_project?['agreements'] != null) {
+            try {
+              final agreementsList = _project?['agreements'] as List;
+              _uploadedFiles = agreementsList.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+            } catch (_) {}
+          }
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('Error fetching project details: $e');
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -474,6 +448,14 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(backgroundColor: const Color(0xFF0F172A)),
+        body: const Center(child: CircularProgressIndicator(color: Color(0xFF06B6D4))),
+      );
+    }
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -599,6 +581,24 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
   }
 
   // OVERVIEW TAB
+  double _getTotalSpent() {
+    double total = 0;
+    for (var e in _expenses) {
+      total += (e['amount'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total;
+  }
+
+  String _formatAmount(double amount) {
+    if (amount >= 10000000) {
+      return '₹ ${(amount / 10000000).toStringAsFixed(1)}Cr';
+    } else if (amount >= 100000) {
+      return '₹ ${(amount / 100000).toStringAsFixed(1)}L';
+    } else {
+      return '₹ ${amount.toStringAsFixed(0)}';
+    }
+  }
+
   Widget _buildOverviewTab() {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -616,6 +616,10 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
   }
 
   Widget _buildBudgetCard() {
+    final budget = double.tryParse(_totalBudget) ?? 0.0;
+    final spent = _getTotalSpent();
+    final isOverBudget = budget > 0 && spent > budget;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -633,30 +637,31 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
                 'TOTAL SPENT (TILL DATE)',
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.bold),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD1FAE5),
-                  borderRadius: BorderRadius.circular(12),
+              if (budget > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isOverBudget ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    isOverBudget ? 'Over Budget' : 'Under Budget',
+                    style: TextStyle(color: isOverBudget ? const Color(0xFFE11D48) : const Color(0xFF059669), fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
                 ),
-                child: const Text(
-                  'Under Budget',
-                  style: TextStyle(color: Color(0xFF059669), fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text(
-                '₹ 45.2L',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              Text(
+                _formatAmount(spent),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
               ),
               const SizedBox(width: 4),
               Text(
-                '/ 80L',
+                '/ ${_formatAmount(budget)}',
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
               ),
             ],
@@ -700,9 +705,34 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
     );
   }
 
+  IconData _getExpenseIcon(String category) {
+    switch (category.toUpperCase()) {
+      case 'WAGES': return Icons.people_outline;
+      case 'VENDOR': return Icons.layers_outlined;
+      case 'TRANSPORT': return Icons.local_shipping_outlined;
+      case 'TEA_SNACKS': return Icons.coffee_outlined;
+      default: return Icons.receipt_long;
+    }
+  }
+
+  Color _getExpenseColor(String category) {
+    switch (category.toUpperCase()) {
+      case 'WAGES': return Colors.blue;
+      case 'VENDOR': return Colors.orange;
+      case 'TRANSPORT': return Colors.purple;
+      case 'TEA_SNACKS': return Colors.teal;
+      default: return Colors.grey;
+    }
+  }
+
   Widget _buildDailyExpenses() {
     final dateStr = _formatDate(_overviewDailyDate);
-    final expenses = _mockOverviewExpenses[dateStr] ?? [];
+    final dailyExpenses = _expenses.where((e) {
+      if (e['date'] == null) return false;
+      final eDate = DateTime.tryParse(e['date'].toString());
+      if (eDate == null) return false;
+      return _formatDate(eDate) == dateStr;
+    }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -735,22 +765,24 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
           ],
         ),
         const SizedBox(height: 16),
-        if (expenses.isEmpty)
+        if (dailyExpenses.isEmpty)
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text('No expenses recorded for this date.', style: TextStyle(color: Colors.grey)),
           )
         else
-          ...expenses.map((e) {
+          ...dailyExpenses.map((e) {
+            final category = e['category']?.toString() ?? 'OTHER';
+            final color = _getExpenseColor(category);
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: _buildExpenseItem(
-                icon: e['icon'],
-                iconColor: e['iconColor'],
-                iconBg: e['iconBg'],
-                title: e['title'],
-                subtitle: e['subtitle'],
-                amount: e['amount'],
+                icon: _getExpenseIcon(category),
+                iconColor: color,
+                iconBg: color.withOpacity(0.1),
+                title: e['title'] ?? 'Expense',
+                subtitle: e['subtitle'] ?? category,
+                amount: '₹${e['amount'] ?? 0}',
               ),
             );
           }).toList(),
@@ -792,6 +824,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
   }
 
   Widget _buildProjectStages() {
+    final installments = _project?['installments'] as List<dynamic>? ?? [];
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -800,28 +834,22 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
         ),
         const SizedBox(height: 16),
-        _buildStageItem(
-          icon: Icons.check_circle,
-          iconColor: const Color(0xFF10B981),
-          title: 'Foundation & Excavation',
-          subtitle: 'Completed Mar 15, 2025',
-          isLast: false,
-        ),
-        _buildStageItem(
-          icon: Icons.radio_button_checked,
-          iconColor: const Color(0xFF06B6D4),
-          title: 'Structural Work',
-          subtitle: 'In Progress (Est. May 2025)',
-          isLast: false,
-          titleColor: const Color(0xFF06B6D4),
-        ),
-        _buildStageItem(
-          icon: Icons.circle,
-          iconColor: const Color(0xFF0F172A),
-          title: 'Finishing & Interiors',
-          subtitle: 'Planned for Sep 2025',
-          isLast: true,
-        ),
+        if (installments.isEmpty)
+          const Text('No stages defined yet.', style: TextStyle(color: Colors.grey)),
+        ...installments.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final inst = entry.value;
+          final isPaid = inst['isPaid'] == true;
+          final isLast = idx == installments.length - 1;
+          
+          return _buildStageItem(
+            icon: isPaid ? Icons.check_circle : Icons.circle,
+            iconColor: isPaid ? const Color(0xFF10B981) : const Color(0xFF0F172A),
+            title: inst['stageName'] ?? 'Stage ${idx + 1}',
+            subtitle: isPaid ? 'Completed' : 'Planned',
+            isLast: isLast,
+          );
+        }).toList(),
       ],
     );
   }
@@ -856,6 +884,8 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
   }
 
   Widget _buildTeamMembers() {
+    final assignments = _project?['assignments'] as List? ?? [];
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -873,41 +903,34 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
           ],
         ),
         const SizedBox(height: 8),
-        _buildTeamMemberItem(
-          initials: 'RK',
-          bgColor: Colors.blue,
-          name: 'Raj Kumar',
-          role: 'Project Manager',
-          badgeText: 'PM',
-          badgeBg: Colors.blue.shade50,
-          badgeColor: Colors.blue,
-        ),
-        const SizedBox(height: 12),
-        _buildTeamMemberItem(
-          initials: 'SK',
-          bgColor: const Color(0xFF10B981),
-          name: 'Suresh Kannan',
-          role: 'Site Engineer',
-          badgeText: 'PRESENT',
-          badgeBg: const Color(0xFFD1FAE5),
-          badgeColor: const Color(0xFF059669),
-          roleBadgeText: 'ENGINEER',
-          roleBadgeBg: Colors.orange.shade50,
-          roleBadgeColor: Colors.orange,
-        ),
-        const SizedBox(height: 12),
-        _buildTeamMemberItem(
-          initials: 'PM',
-          bgColor: Colors.orange,
-          name: 'Priya Murugan',
-          role: 'Supervisor',
-          badgeText: 'LEAVE APPROVED',
-          badgeBg: Colors.orange.shade50,
-          badgeColor: Colors.orange,
-          roleBadgeText: 'SUPERVISOR',
-          roleBadgeBg: const Color(0xFFD1FAE5),
-          roleBadgeColor: const Color(0xFF059669),
-        ),
+        if (assignments.isEmpty)
+          const Text('No team members assigned', style: TextStyle(color: Colors.grey)),
+        ...assignments.map((assignment) {
+          final user = assignment['user'] ?? {};
+          final name = user['fullName'] ?? 'Unknown';
+          final role = user['role'] ?? 'WORKER';
+          
+          String initials = '?';
+          final nameParts = name.toString().split(' ');
+          if (nameParts.length >= 2) {
+            initials = '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase();
+          } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
+            initials = '${nameParts[0][0]}'.toUpperCase();
+          }
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildTeamMemberItem(
+              initials: initials,
+              bgColor: Colors.blue,
+              name: name,
+              role: role,
+              badgeText: 'ASSIGNED',
+              badgeBg: Colors.blue.shade50,
+              badgeColor: Colors.blue,
+            ),
+          );
+        }).toList(),
       ],
     );
   }
@@ -1016,6 +1039,28 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
   }
 
   Widget _buildClientPaymentsTab() {
+    final budget = double.tryParse(_totalBudget) ?? 0.0;
+    final advance = (_project?['advanceReceived'] as num?)?.toDouble() ?? 0.0;
+    
+    final installments = _project?['installments'] as List<dynamic>? ?? [];
+    double paidInstallments = 0.0;
+    for (var inst in installments) {
+      if (inst['isPaid'] == true) {
+        paidInstallments += (inst['amount'] as num?)?.toDouble() ?? 0.0;
+      }
+    }
+
+    final totalReceived = advance + paidInstallments;
+    final pending = budget - totalReceived > 0 ? budget - totalReceived : 0.0;
+
+    int flexReceived = 0;
+    int flexPending = 100;
+    if (budget > 0) {
+      flexReceived = ((totalReceived / budget) * 100).toInt();
+      flexReceived = flexReceived > 100 ? 100 : flexReceived;
+      flexPending = 100 - flexReceived;
+    }
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -1026,27 +1071,29 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
             children: [
               const Text('CLIENT BUDGET', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
               const SizedBox(height: 4),
-              const Text('₹2,40,00,000', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              Text(_formatAmount(budget), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(
-                    flex: 55,
-                    child: Container(height: 6, decoration: BoxDecoration(color: const Color(0xFF10B981), borderRadius: BorderRadius.circular(3))),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    flex: 45,
-                    child: Container(height: 6, decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(3))),
-                  ),
+                  if (flexReceived > 0)
+                    Expanded(
+                      flex: flexReceived,
+                      child: Container(height: 6, decoration: BoxDecoration(color: const Color(0xFF10B981), borderRadius: BorderRadius.circular(3))),
+                    ),
+                  if (flexReceived > 0 && flexPending > 0) const SizedBox(width: 4),
+                  if (flexPending > 0)
+                    Expanded(
+                      flex: flexPending,
+                      child: Container(height: 6, decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(3))),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Received: ₹1,32,00,000', style: TextStyle(fontSize: 12, color: Color(0xFF1E293B), fontWeight: FontWeight.w600)),
-                  const Text('Pending: ₹1,08,00,000', style: TextStyle(fontSize: 12, color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+                  Text('Received: ${_formatAmount(totalReceived)}', style: const TextStyle(fontSize: 12, color: Color(0xFF1E293B), fontWeight: FontWeight.w600)),
+                  Text('Pending: ${_formatAmount(pending)}', style: const TextStyle(fontSize: 12, color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
                 ],
               ),
             ],
@@ -1064,11 +1111,29 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
           ],
         ),
         const SizedBox(height: 8),
-        _buildInstallmentItem('Foundation Completion', 'Paid on Mar 15, 2025', '₹40L', 'PAID', const Color(0xFF10B981), const Color(0xFFD1FAE5)),
-        Divider(color: Colors.grey.shade200),
-        _buildInstallmentItem('Structural Work', 'Due: May 30, 2025', '₹60L', 'PENDING', const Color(0xFFF59E0B), const Color(0xFFFEF3C7)),
-        Divider(color: Colors.grey.shade200),
-        _buildInstallmentItem('Finishing Work', 'Due: Sep 30, 2025', '₹80L', 'UPCOMING', Colors.grey.shade600, Colors.grey.shade200),
+        if (installments.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text('No installments defined.', style: TextStyle(color: Colors.grey)),
+          )
+        else
+          ...installments.map((inst) {
+            final isPaid = inst['isPaid'] == true;
+            final amount = (inst['amount'] as num?)?.toDouble() ?? 0.0;
+            return Column(
+              children: [
+                _buildInstallmentItem(
+                  inst['stageName'] ?? 'Installment',
+                  isPaid ? 'Paid' : 'Pending',
+                  _formatAmount(amount),
+                  isPaid ? 'PAID' : 'PENDING',
+                  isPaid ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                  isPaid ? const Color(0xFFD1FAE5) : const Color(0xFFFEF3C7),
+                ),
+                Divider(color: Colors.grey.shade200),
+              ],
+            );
+          }).toList(),
       ],
     );
   }
@@ -1106,7 +1171,32 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
 
   Widget _buildDailySiteExpensesTab() {
     final dateStr = _formatDate(_paymentDailyDate);
-    final data = _mockPaymentExpenses[dateStr];
+    final dailyExpenses = _expenses.where((e) {
+      if (e['date'] == null) return false;
+      final eDate = DateTime.tryParse(e['date'].toString());
+      if (eDate == null) return false;
+      return _formatDate(eDate) == dateStr;
+    }).toList();
+
+    double total = 0;
+    double wages = 0;
+    double tea = 0;
+    double other = 0;
+    int workers = 0;
+
+    for (var e in dailyExpenses) {
+      final amt = double.tryParse(e['amount']?.toString() ?? '0') ?? 0;
+      total += amt;
+      final category = e['category']?.toString().toUpperCase();
+      if (category == 'WAGES') {
+        wages += amt;
+        workers++; // rough proxy
+      } else if (category == 'TEA_SNACKS') {
+        tea += amt;
+      } else {
+        other += amt;
+      }
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -1132,7 +1222,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
           ),
         ),
         const SizedBox(height: 24),
-        if (data == null)
+        if (dailyExpenses.isEmpty)
           const Center(child: Padding(
             padding: EdgeInsets.all(32.0),
             child: Text('No expenses recorded for this date.', style: TextStyle(color: Colors.grey)),
@@ -1161,7 +1251,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
                           children: [
                             const Text('TOTAL EXPENSE', style: TextStyle(fontSize: 10, color: Colors.grey)),
                             const SizedBox(height: 4),
-                            Text(data['total'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                            Text('₹${total.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
                           ],
                         ),
                       ),
@@ -1176,7 +1266,7 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
                           children: [
                             const Text('WORKERS PRESENT', style: TextStyle(fontSize: 10, color: Colors.grey)),
                             const SizedBox(height: 4),
-                            Text(data['workers'], style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                            Text('$workers', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
                           ],
                         ),
                       ),
@@ -1189,11 +1279,11 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
                   decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(8)),
                   child: Column(
                     children: [
-                       _buildDarkOverviewRow('Salary Expense (${data['workers']} Headcount)', data['salary']),
+                       _buildDarkOverviewRow('Salary Expense ($workers Headcount)', '₹${wages.toStringAsFixed(0)}'),
                        const SizedBox(height: 8),
-                       _buildDarkOverviewRow('Tea & Snacks', data['tea']),
+                       _buildDarkOverviewRow('Tea & Snacks', '₹${tea.toStringAsFixed(0)}'),
                        const SizedBox(height: 8),
-                       _buildDarkOverviewRow('Other Daily Expenses', data['other']),
+                       _buildDarkOverviewRow('Other Daily Expenses', '₹${other.toStringAsFixed(0)}'),
                     ],
                   ),
                 ),
@@ -1203,16 +1293,16 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
           const SizedBox(height: 24),
           const Text('DETAILED BREAKDOWN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
           const SizedBox(height: 12),
-          ...((data['breakdown'] as List).asMap().entries.map((entry) {
+          ...dailyExpenses.asMap().entries.map((entry) {
              final item = entry.value;
-             final isLast = entry.key == (data['breakdown'] as List).length - 1;
+             final isLast = entry.key == dailyExpenses.length - 1;
              return Column(
                children: [
-                 _buildDetailedBreakdownItem(item['title'], item['subtitle'], item['amount']),
+                 _buildDetailedBreakdownItem(item['title'] ?? 'Expense', item['subtitle'] ?? item['category']?.toString() ?? '', '₹${item['amount'] ?? 0}'),
                  if (!isLast) Divider(color: Colors.grey.shade200),
                ]
              );
-          }).toList()),
+          }).toList(),
         ]
       ],
     );
@@ -1317,50 +1407,206 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
     );
   }
 
+  Future<void> _updateTaskStatus(String taskId, String newStatus) async {
+    try {
+      final response = await _apiService.patch('/daily-tasks/$taskId/status', {'status': newStatus});
+      if (response != null) {
+        _fetchProjectDetails(); // Refresh
+      }
+    } catch (e) {
+      print('Error updating task: $e');
+    }
+  }
+
+  void _showTaskActionModal(Map<String, dynamic> task) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        final currentStatus = task['status']?.toString() ?? '';
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(task['title'] ?? 'Task', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(task['description'] ?? 'No description', style: TextStyle(color: Colors.grey.shade600)),
+              const SizedBox(height: 24),
+              if (currentStatus == 'PLANNED') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF06B6D4), padding: const EdgeInsets.symmetric(vertical: 14)),
+                    onPressed: () { Navigator.pop(ctx); _updateTaskStatus(task['id'], 'IN_PROGRESS'); },
+                    child: const Text('Move to In Progress', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFEF4444), side: const BorderSide(color: Color(0xFFEF4444)), padding: const EdgeInsets.symmetric(vertical: 14)),
+                    onPressed: () { Navigator.pop(ctx); _updateTaskStatus(task['id'], 'BLOCKED'); },
+                    child: const Text('Blocked', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ] else if (currentStatus == 'IN_PROGRESS') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF06B6D4), padding: const EdgeInsets.symmetric(vertical: 14)),
+                    onPressed: () { Navigator.pop(ctx); _updateTaskStatus(task['id'], 'COMPLETED'); },
+                    child: const Text('Completed', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFEF4444), side: const BorderSide(color: Color(0xFFEF4444)), padding: const EdgeInsets.symmetric(vertical: 14)),
+                    onPressed: () { Navigator.pop(ctx); _updateTaskStatus(task['id'], 'BLOCKED'); },
+                    child: const Text('Blocked', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ] else if (currentStatus == 'BLOCKED') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF06B6D4), padding: const EdgeInsets.symmetric(vertical: 14)),
+                    onPressed: () { Navigator.pop(ctx); _updateTaskStatus(task['id'], 'IN_PROGRESS'); },
+                    child: const Text('Assign task again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ] else if (currentStatus == 'COMPLETED') ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1FAE5).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF10B981).withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 24),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'This task has been successfully completed.',
+                          style: TextStyle(color: Color(0xFF10B981), fontSize: 14, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF06B6D4),
+                      side: const BorderSide(color: Color(0xFF06B6D4)),
+                      padding: const EdgeInsets.symmetric(vertical: 14)
+                    ),
+                    onPressed: () { Navigator.pop(ctx); _updateTaskStatus(task['id'], 'IN_PROGRESS'); },
+                    child: const Text('Reopen Task', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ]
+            ],
+          ),
+        );
+      }
+    );
+  }
+
   Widget _buildTasksList(String status) {
+    final allTasks = _project?['dailyTasks'] as List<dynamic>? ?? [];
+    
+    // Map UI tab status to DB status
+    String dbStatus = '';
+    if (status == 'Planned') dbStatus = 'PLANNED';
+    else if (status == 'In Progress') dbStatus = 'IN_PROGRESS';
+    else if (status == 'Blocked') dbStatus = 'BLOCKED';
+    else if (status == 'Completed') dbStatus = 'COMPLETED';
+
+    final tasks = allTasks.where((t) => t['status'] == dbStatus).toList();
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (status == 'Planned') ...[
-          _buildTaskItem('Install electrical conduits Floor 8', 'Jun 20', 'High', const Color(0xFFEF4444), const Color(0xFFFEE2E2), assignee: 'Vimal R.'),
-          const SizedBox(height: 12),
-          _buildTaskItem('Tile work – 6th floor bathrooms', 'Jun 28', 'Low', const Color(0xFF10B981), const Color(0xFFD1FAE5)),
-        ],
-        if (status == 'In Progress') ...[
-          _buildTaskItem('Plastering – Floors 9-11', 'Jun 15', 'High', const Color(0xFFEF4444), const Color(0xFFFEE2E2)),
-        ],
-        if (status == 'Blocked') ...[
-          _buildWarningTaskItem('Waterproofing – Terrace', 'Material not delivered'),
-        ],
-        if (status == 'Completed') ...[
-          _buildCompletedTaskItem('Foundation & Footing', 'Completed Mar 10'),
-          const SizedBox(height: 12),
-          _buildCompletedTaskItem('Structural columns up to 8F', 'Completed May 2'),
-        ],
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: _showAddTaskModal,
-          child: CustomPaint(
-            painter: DashedBorderPainter(color: const Color(0xFF06B6D4)),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE0F2FE).withOpacity(0.5),
-                borderRadius: BorderRadius.circular(8),
+        if (tasks.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: Text('No tasks found.', style: TextStyle(color: Colors.grey)),
+          )
+        else
+          ...tasks.map((task) {
+            final title = task['title']?.toString() ?? 'Task';
+            final desc = task['description']?.toString() ?? '';
+            final assignee = task['worker']?['fullName']?.toString();
+            final priority = task['priority']?.toString() ?? 'LOW';
+            final deadlineStr = task['deadline']?.toString();
+            
+            String displayDate = 'No date';
+            if (deadlineStr != null) {
+               final d = DateTime.tryParse(deadlineStr);
+               if (d != null) {
+                 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                 displayDate = '${months[d.month - 1]} ${d.day}';
+               }
+            }
+
+            final isHigh = priority == 'HIGH';
+            final badgeColor = isHigh ? const Color(0xFFEF4444) : const Color(0xFF10B981);
+            final badgeBg = isHigh ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5);
+            final badgeLabel = isHigh ? 'High' : 'Low';
+
+            Widget item;
+            if (dbStatus == 'BLOCKED') {
+               item = _buildWarningTaskItem(title, desc.isNotEmpty ? desc : 'Blocked task');
+            } else if (dbStatus == 'COMPLETED') {
+               item = _buildCompletedTaskItem(title, 'Completed');
+            } else {
+               item = _buildTaskItem(title, displayDate, badgeLabel, badgeColor, badgeBg, assignee: assignee);
+            }
+
+            return GestureDetector(
+              onTap: () => _showTaskActionModal(task),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: item,
               ),
-              alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.add, color: Color(0xFF06B6D4), size: 18),
-                  SizedBox(width: 8),
-                  Text('Add Task', style: TextStyle(color: Color(0xFF06B6D4), fontWeight: FontWeight.bold)),
-                ],
+            );
+          }).toList(),
+
+        if (status == 'Planned') ...[
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: _showAddTaskModal,
+            child: CustomPaint(
+              painter: DashedBorderPainter(color: const Color(0xFF06B6D4)),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0F2FE).withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.add, color: Color(0xFF06B6D4), size: 18),
+                    SizedBox(width: 8),
+                    Text('Add Task', style: TextStyle(color: Color(0xFF06B6D4), fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -1553,17 +1799,29 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
 
   void _showAddTaskModal() {
     String taskName = '';
-    String assignee = 'Raj Kumar';
-    String deadline = '19-06-2026';
-    String priority = 'Low';
+    String deadline = '';
+    String priority = 'High';
+    
+    final assignments = _project?['assignments'] as List<dynamic>? ?? [];
+    List<Map<String, String>> workers = assignments.map((a) {
+      return {
+        'id': a['user']?['id']?.toString() ?? '',
+        'name': a['user']?['fullName']?.toString() ?? 'Unknown Worker',
+      };
+    }).toList();
+    
+    if (workers.isEmpty) {
+      workers = [{'id': '', 'name': 'No workers assigned'}];
+    }
+    
+    String assigneeId = workers.first['id']!;
+    String assigneeName = workers.first['name']!;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF0F172A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
@@ -1601,11 +1859,80 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTextField('TASK NAME *', taskName, (val) => taskName = val, hint: 'e.g. celling'),
+                        _buildTextField('TASK NAME *', taskName, (val) => taskName = val, hint: 'e.g. ceiling'),
                         const SizedBox(height: 16),
-                        _buildDropdown('ASSIGNED TO *', ['Raj Kumar', 'Suresh Kannan', 'Priya Murugan'], assignee, (val) => setState(() => assignee = val!)),
+                        _buildDropdown('ASSIGNED TO *', workers.map((w) => w['name']!).toList(), assigneeName, (val) {
+                          setState(() {
+                            assigneeName = val!;
+                            assigneeId = workers.firstWhere((w) => w['name'] == val)['id']!;
+                          });
+                        }),
                         const SizedBox(height: 16),
-                        _buildTextField('DEADLINE *', deadline, (val) => deadline = val, isDate: true),
+                        GestureDetector(
+                          onTap: () async {
+                            DateTime firstD = DateTime(2000);
+                            DateTime lastD = DateTime(2101);
+                            
+                            if (_startDate.isNotEmpty) {
+                              final s = DateTime.tryParse(_startDate);
+                              if (s != null) firstD = s;
+                            }
+                            if (_endDate.isNotEmpty) {
+                              final e = DateTime.tryParse(_endDate);
+                              if (e != null) lastD = e;
+                            }
+                            
+                            DateTime initDate = DateTime.now();
+                            if (initDate.isBefore(firstD)) initDate = firstD;
+                            if (initDate.isAfter(lastD)) initDate = lastD;
+
+                            final DateTime? picked = await showDatePicker(
+                              context: context,
+                              initialDate: initDate,
+                              firstDate: firstD,
+                              lastDate: lastD,
+                              builder: (context, child) {
+                                return Theme(
+                                  data: ThemeData.light().copyWith(
+                                    colorScheme: const ColorScheme.light(primary: Color(0xFF06B6D4)),
+                                  ),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                deadline = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                              });
+                            }
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('DEADLINE *', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E293B),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.blueGrey.shade800),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      deadline.isEmpty ? 'YYYY-MM-DD' : deadline,
+                                      style: TextStyle(color: deadline.isEmpty ? Colors.grey.shade600 : Colors.white, fontSize: 16),
+                                    ),
+                                    const Icon(Icons.calendar_today, color: Colors.grey, size: 18),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         const Text('PRIORITY', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
@@ -1645,7 +1972,32 @@ class _ProjectDetailsPageState extends State<ProjectDetailsPage> with SingleTick
                           backgroundColor: const Color(0xFF06B6D4),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () async {
+                          if (taskName.isEmpty || assigneeId.isEmpty) return;
+                          try {
+                            String? isoDate;
+                            if (deadline.isNotEmpty) {
+                              try {
+                                final d = DateTime.parse(deadline);
+                                isoDate = d.toIso8601String();
+                              } catch (_) {}
+                            }
+                            
+                            await _apiService.post('/daily-tasks', {
+                              'title': taskName,
+                              'description': 'Task assigned to $assigneeName',
+                              'deadline': isoDate,
+                              'priority': priority.toUpperCase(),
+                              'status': 'PLANNED',
+                              'project': { 'connect': { 'id': widget.projectId } },
+                              'worker': { 'connect': { 'id': assigneeId } }
+                            });
+                            Navigator.pop(context);
+                            _fetchProjectDetails();
+                          } catch (e) {
+                            print('Error creating task: $e');
+                          }
+                        },
                         child: const Text('Add Task', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ),
